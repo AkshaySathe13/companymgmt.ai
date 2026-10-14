@@ -1,4 +1,4 @@
-# companymgmt.ai
+# command.carrieros.ai
 
 A professional dark company-management workspace shell built with Next.js 16 App Router, React 19, Tailwind CSS 4, TypeScript, self-hosted Manrope, and Lucide icons.
 
