@@ -1,0 +1,470 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T19:50:59.997475+00:00",
+  "title": "Design System: companymgmt.ai",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Background",
+        "tonalRamp": [
+          "oklch(15.0% 0.01027 285.29)",
+          "oklch(26.4% 0.01027 285.29)",
+          "oklch(37.9% 0.01027 285.29)",
+          "oklch(49.3% 0.01027 285.29)",
+          "oklch(60.7% 0.01027 285.29)",
+          "oklch(72.1% 0.01027 285.29)",
+          "oklch(83.6% 0.01027 285.29)",
+          "oklch(95.0% 0.01027 285.29)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Sidebar",
+        "tonalRamp": [
+          "oklch(15.0% 0.01593 284.87)",
+          "oklch(26.4% 0.01593 284.87)",
+          "oklch(37.9% 0.01593 284.87)",
+          "oklch(49.3% 0.01593 284.87)",
+          "oklch(60.7% 0.01593 284.87)",
+          "oklch(72.1% 0.01593 284.87)",
+          "oklch(83.6% 0.01593 284.87)",
+          "oklch(95.0% 0.01593 284.87)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.01929 284.76)",
+          "oklch(26.4% 0.01929 284.76)",
+          "oklch(37.9% 0.01929 284.76)",
+          "oklch(49.3% 0.01929 284.76)",
+          "oklch(60.7% 0.01929 284.76)",
+          "oklch(72.1% 0.01929 284.76)",
+          "oklch(83.6% 0.01929 284.76)",
+          "oklch(95.0% 0.01929 284.76)"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Raised",
+        "tonalRamp": [
+          "oklch(15.0% 0.02243 284.72)",
+          "oklch(26.4% 0.02243 284.72)",
+          "oklch(37.9% 0.02243 284.72)",
+          "oklch(49.3% 0.02243 284.72)",
+          "oklch(60.7% 0.02243 284.72)",
+          "oklch(72.1% 0.02243 284.72)",
+          "oklch(83.6% 0.02243 284.72)",
+          "oklch(95.0% 0.02243 284.72)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Border",
+        "tonalRamp": [
+          "oklch(15.0% 0.02349 284.87)",
+          "oklch(26.4% 0.02349 284.87)",
+          "oklch(37.9% 0.02349 284.87)",
+          "oklch(49.3% 0.02349 284.87)",
+          "oklch(60.7% 0.02349 284.87)",
+          "oklch(72.1% 0.02349 284.87)",
+          "oklch(83.6% 0.02349 284.87)",
+          "oklch(95.0% 0.02349 284.87)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.01217 296.35)",
+          "oklch(26.4% 0.01217 296.35)",
+          "oklch(37.9% 0.01217 296.35)",
+          "oklch(49.3% 0.01217 296.35)",
+          "oklch(60.7% 0.01217 296.35)",
+          "oklch(72.1% 0.01217 296.35)",
+          "oklch(83.6% 0.01217 296.35)",
+          "oklch(95.0% 0.01217 296.35)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "oklch(15.0% 0.02883 290.24)",
+          "oklch(26.4% 0.02883 290.24)",
+          "oklch(37.9% 0.02883 290.24)",
+          "oklch(49.3% 0.02883 290.24)",
+          "oklch(60.7% 0.02883 290.24)",
+          "oklch(72.1% 0.02883 290.24)",
+          "oklch(83.6% 0.02883 290.24)",
+          "oklch(95.0% 0.02883 290.24)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Accent",
+        "tonalRamp": [
+          "oklch(15.0% 0.13032 289.93)",
+          "oklch(26.4% 0.13032 289.93)",
+          "oklch(37.9% 0.13032 289.93)",
+          "oklch(49.3% 0.13032 289.93)",
+          "oklch(60.7% 0.13032 289.93)",
+          "oklch(72.1% 0.13032 289.93)",
+          "oklch(83.6% 0.13032 289.93)",
+          "oklch(95.0% 0.13032 289.93)"
+        ]
+      },
+      "accent-wash": {
+        "role": "primary",
+        "displayName": "Accent Wash",
+        "tonalRamp": [
+          "oklch(15.0% 0.04918 291.38)",
+          "oklch(26.4% 0.04918 291.38)",
+          "oklch(37.9% 0.04918 291.38)",
+          "oklch(49.3% 0.04918 291.38)",
+          "oklch(60.7% 0.04918 291.38)",
+          "oklch(72.1% 0.04918 291.38)",
+          "oklch(83.6% 0.04918 291.38)",
+          "oklch(95.0% 0.04918 291.38)"
+        ]
+      },
+      "nav-text": {
+        "role": "neutral",
+        "displayName": "Nav Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.02693 293.01)",
+          "oklch(26.4% 0.02693 293.01)",
+          "oklch(37.9% 0.02693 293.01)",
+          "oklch(49.3% 0.02693 293.01)",
+          "oklch(60.7% 0.02693 293.01)",
+          "oklch(72.1% 0.02693 293.01)",
+          "oklch(83.6% 0.02693 293.01)",
+          "oklch(95.0% 0.02693 293.01)"
+        ]
+      },
+      "nav-hover": {
+        "role": "neutral",
+        "displayName": "Nav Hover",
+        "tonalRamp": [
+          "oklch(15.0% 0.02074 284.79)",
+          "oklch(26.4% 0.02074 284.79)",
+          "oklch(37.9% 0.02074 284.79)",
+          "oklch(49.3% 0.02074 284.79)",
+          "oklch(60.7% 0.02074 284.79)",
+          "oklch(72.1% 0.02074 284.79)",
+          "oklch(83.6% 0.02074 284.79)",
+          "oklch(95.0% 0.02074 284.79)"
+        ]
+      },
+      "nav-hover-text": {
+        "role": "neutral",
+        "displayName": "Nav Hover Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.01626 297.52)",
+          "oklch(26.4% 0.01626 297.52)",
+          "oklch(37.9% 0.01626 297.52)",
+          "oklch(49.3% 0.01626 297.52)",
+          "oklch(60.7% 0.01626 297.52)",
+          "oklch(72.1% 0.01626 297.52)",
+          "oklch(83.6% 0.01626 297.52)",
+          "oklch(95.0% 0.01626 297.52)"
+        ]
+      },
+      "nav-active-text": {
+        "role": "primary",
+        "displayName": "Nav Active Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.07211 294.55)",
+          "oklch(26.4% 0.07211 294.55)",
+          "oklch(37.9% 0.07211 294.55)",
+          "oklch(49.3% 0.07211 294.55)",
+          "oklch(60.7% 0.07211 294.55)",
+          "oklch(72.1% 0.07211 294.55)",
+          "oklch(83.6% 0.07211 294.55)",
+          "oklch(95.0% 0.07211 294.55)"
+        ]
+      },
+      "login-button": {
+        "role": "primary",
+        "displayName": "Login Button",
+        "tonalRamp": [
+          "oklch(15.0% 0.11994 296.64)",
+          "oklch(26.4% 0.11994 296.64)",
+          "oklch(37.9% 0.11994 296.64)",
+          "oklch(49.3% 0.11994 296.64)",
+          "oklch(60.7% 0.11994 296.64)",
+          "oklch(72.1% 0.11994 296.64)",
+          "oklch(83.6% 0.11994 296.64)",
+          "oklch(95.0% 0.11994 296.64)"
+        ]
+      },
+      "login-button-hover": {
+        "role": "primary",
+        "displayName": "Login Button Hover",
+        "tonalRamp": [
+          "oklch(15.0% 0.10546 297.61)",
+          "oklch(26.4% 0.10546 297.61)",
+          "oklch(37.9% 0.10546 297.61)",
+          "oklch(49.3% 0.10546 297.61)",
+          "oklch(60.7% 0.10546 297.61)",
+          "oklch(72.1% 0.10546 297.61)",
+          "oklch(83.6% 0.10546 297.61)",
+          "oklch(95.0% 0.10546 297.61)"
+        ]
+      },
+      "login-button-text": {
+        "role": "primary",
+        "displayName": "Login Button Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.03912 304.87)",
+          "oklch(26.4% 0.03912 304.87)",
+          "oklch(37.9% 0.03912 304.87)",
+          "oklch(49.3% 0.03912 304.87)",
+          "oklch(60.7% 0.03912 304.87)",
+          "oklch(72.1% 0.03912 304.87)",
+          "oklch(83.6% 0.03912 304.87)",
+          "oklch(95.0% 0.03912 304.87)"
+        ]
+      },
+      "field-surface": {
+        "role": "neutral",
+        "displayName": "Field Surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.02012 303.02)",
+          "oklch(26.4% 0.02012 303.02)",
+          "oklch(37.9% 0.02012 303.02)",
+          "oklch(49.3% 0.02012 303.02)",
+          "oklch(60.7% 0.02012 303.02)",
+          "oklch(72.1% 0.02012 303.02)",
+          "oklch(83.6% 0.02012 303.02)",
+          "oklch(95.0% 0.02012 303.02)"
+        ]
+      },
+      "field-border": {
+        "role": "neutral",
+        "displayName": "Field Border",
+        "tonalRamp": [
+          "oklch(15.0% 0.04398 308.92)",
+          "oklch(26.4% 0.04398 308.92)",
+          "oklch(37.9% 0.04398 308.92)",
+          "oklch(49.3% 0.04398 308.92)",
+          "oklch(60.7% 0.04398 308.92)",
+          "oklch(72.1% 0.04398 308.92)",
+          "oklch(83.6% 0.04398 308.92)",
+          "oklch(95.0% 0.04398 308.92)"
+        ]
+      },
+      "field-text": {
+        "role": "neutral",
+        "displayName": "Field Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.03064 309.06)",
+          "oklch(26.4% 0.03064 309.06)",
+          "oklch(37.9% 0.03064 309.06)",
+          "oklch(49.3% 0.03064 309.06)",
+          "oklch(60.7% 0.03064 309.06)",
+          "oklch(72.1% 0.03064 309.06)",
+          "oklch(83.6% 0.03064 309.06)",
+          "oklch(95.0% 0.03064 309.06)"
+        ]
+      },
+      "field-focus": {
+        "role": "primary",
+        "displayName": "Field Focus",
+        "tonalRamp": [
+          "oklch(15.0% 0.10701 306.70)",
+          "oklch(26.4% 0.10701 306.70)",
+          "oklch(37.9% 0.10701 306.70)",
+          "oklch(49.3% 0.10701 306.70)",
+          "oklch(60.7% 0.10701 306.70)",
+          "oklch(72.1% 0.10701 306.70)",
+          "oklch(83.6% 0.10701 306.70)",
+          "oklch(95.0% 0.10701 306.70)"
+        ]
+      },
+      "form-error": {
+        "role": "neutral",
+        "displayName": "Form Error",
+        "tonalRamp": [
+          "oklch(15.0% 0.09308 4.90)",
+          "oklch(26.4% 0.09308 4.90)",
+          "oklch(37.9% 0.09308 4.90)",
+          "oklch(49.3% 0.09308 4.90)",
+          "oklch(60.7% 0.09308 4.90)",
+          "oklch(72.1% 0.09308 4.90)",
+          "oklch(83.6% 0.09308 4.90)",
+          "oklch(95.0% 0.09308 4.90)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display"
+      },
+      "headline": {
+        "displayName": "Headline"
+      },
+      "title": {
+        "displayName": "Title"
+      },
+      "login-title": {
+        "displayName": "Login Title"
+      },
+      "body": {
+        "displayName": "Body"
+      },
+      "navigation": {
+        "displayName": "Navigation"
+      },
+      "label": {
+        "displayName": "Label"
+      },
+      "small": {
+        "displayName": "Small"
+      },
+      "group-label": {
+        "displayName": "Group Label"
+      }
+    },
+    "shadows": [
+      {
+        "name": "popover",
+        "value": "0 15px 45px #0006",
+        "purpose": "Anchored account and notification overlays."
+      },
+      {
+        "name": "dialog",
+        "value": "0 22px 80px #0008",
+        "purpose": "Modal navigation search and workspace guide."
+      },
+      {
+        "name": "field-focus",
+        "value": "0 0 0 3px #ab88cd1a",
+        "purpose": "Login input focus halo."
+      },
+      {
+        "name": "command-focus",
+        "value": "inset 0 -2px #a995d5",
+        "purpose": "Search input focus underline."
+      }
+    ],
+    "motion": [
+      {
+        "name": "sidebar-resize",
+        "value": "width 0.18s ease, flex-basis 0.18s ease",
+        "purpose": "Desktop rail collapse and expansion."
+      },
+      {
+        "name": "navigation-state",
+        "value": "background 0.15s, color 0.15s",
+        "purpose": "Navigation hover; disabled for reduced-motion preference."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "1200px"
+      },
+      {
+        "name": "mobile-drawer",
+        "value": "900px"
+      },
+      {
+        "name": "narrow-mobile",
+        "value": "520px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Sign-in Button",
+      "kind": "button",
+      "description": "Primary demo login action.",
+      "html": "<button class=\"ds-submit\">Sign in <span aria-hidden=\"true\">\u2192</span></button>",
+      "css": ".ds-submit{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);display:flex;justify-content:center;align-items:center;gap:12px;width:100%;padding:15px;border:0;border-radius:8px;background:#b199ec;color:#191023;font-size:13px;font-weight:750;cursor:pointer;}.ds-submit:hover{background:#c4aef8;}.ds-submit:focus-visible{outline:2px solid var(--accent,#b1a3ff);outline-offset:4px;}.ds-submit:disabled{opacity:.6;cursor:wait;}",
+      "refersTo": "button-primary"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "description": "Topbar action with an accessible name.",
+      "html": "<button class=\"ds-icon\" aria-label=\"Search navigation\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg></button>",
+      "css": ".ds-icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--muted,#a3a1b5);cursor:pointer;}.ds-icon:hover{background:var(--raised,#22222e);color:var(--text,#efedf6);}.ds-icon:focus-visible{outline:2px solid var(--accent,#b1a3ff);outline-offset:4px;}@media(max-width:900px){.ds-icon{min-width:44px;height:44px;}}",
+      "refersTo": "icon-button"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "description": "Inactive sidebar destination.",
+      "html": "<a class=\"ds-nav\" href=\"#\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M12 8V4H8\"/><rect x=\"4\" y=\"8\" width=\"16\" height=\"12\" rx=\"2\"/><path d=\"M2 14h2m16 0h2M9 13v2m6-2v2\"/></svg><span>AI Agent</span></a>",
+      "css": ".ds-nav{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);display:flex;align-items:center;gap:11px;min-height:42px;padding:11px 12px;border-radius:8px;color:#b6b3c6;font-size:12px;font-weight:500;line-height:18px;text-decoration:none;transition:background .15s,color .15s;}.ds-nav:hover{background:#20202b;color:#f2effb;}.ds-nav:focus-visible{outline:2px solid var(--accent,#b1a3ff);outline-offset:4px;}.ds-nav.ds-nav-active{background:var(--accent-wash,#29243f);color:#d6cbff;}@media(max-width:900px){.ds-nav{min-height:44px;}}@media(prefers-reduced-motion:reduce){.ds-nav{transition:none;}}",
+      "refersTo": "nav-item"
+    },
+    {
+      "name": "Active Navigation Link",
+      "kind": "nav",
+      "description": "Current destination with a tinted selection surface.",
+      "html": "<a class=\"ds-nav ds-nav-active\" href=\"#\" aria-current=\"page\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M12 8V4H8\"/><rect x=\"4\" y=\"8\" width=\"16\" height=\"12\" rx=\"2\"/><path d=\"M2 14h2m16 0h2M9 13v2m6-2v2\"/></svg><span>AI Agent</span></a>",
+      "css": ".ds-nav{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);display:flex;align-items:center;gap:11px;min-height:42px;padding:11px 12px;border-radius:8px;color:#b6b3c6;font-size:12px;font-weight:500;line-height:18px;text-decoration:none;transition:background .15s,color .15s;}.ds-nav:hover{background:#20202b;color:#f2effb;}.ds-nav:focus-visible{outline:2px solid var(--accent,#b1a3ff);outline-offset:4px;}.ds-nav.ds-nav-active{background:var(--accent-wash,#29243f);color:#d6cbff;}@media(max-width:900px){.ds-nav{min-height:44px;}}@media(prefers-reduced-motion:reduce){.ds-nav{transition:none;}}",
+      "refersTo": "nav-item-active"
+    },
+    {
+      "name": "Login Field",
+      "kind": "input",
+      "description": "Persistent label and native email input.",
+      "html": "<label class=\"ds-label\" for=\"ds-email\">Email address</label><div class=\"ds-field\"><input id=\"ds-email\" type=\"email\" placeholder=\"you@company.com\" /></div>",
+      "css": ".ds-label{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);display:block;margin-bottom:9px;color:#ded2e9;font-size:12px;font-weight:550;}.ds-field{display:flex;align-items:center;padding:0 14px;height:48px;border:1px solid #43364e;border-radius:8px;background:#1c1822;}.ds-field:focus-within{border-color:#ac89cf;box-shadow:0 0 0 3px #ab88cd1a;}.ds-field input{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);flex:1;min-width:0;width:100%;border:0;background:transparent;padding:12px 0;outline:none;color:#e4d9ee;font-size:13px;caret-color:var(--accent,#b1a3ff);}.ds-field input::placeholder{color:#8f8ca4;}@media(max-width:900px){.ds-field input{font-size:16px;}}",
+      "refersTo": "input"
+    },
+    {
+      "name": "Coming Soon Badge",
+      "kind": "chip",
+      "description": "Explicit destination placeholder status.",
+      "html": "<span class=\"ds-status\"><span></span>Coming soon</span>",
+      "css": ".ds-status{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:10px;border:1px solid #37313f;border-radius:6px;padding:5px 8px;color:#b6a9c8;}.ds-status>span{width:4px;height:4px;border-radius:50%;background:#b6a9c8;}",
+      "refersTo": "status-badge"
+    },
+    {
+      "name": "Destination Placeholder",
+      "kind": "custom",
+      "description": "Shared quiet content for every destination.",
+      "html": "<section class=\"ds-coming\"><div class=\"ds-coming-icon\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M12 8V4H8\"/><rect x=\"4\" y=\"8\" width=\"16\" height=\"12\" rx=\"2\"/><path d=\"M2 14h2m16 0h2M9 13v2m6-2v2\"/></svg></div><h2>Coming soon</h2><p>This space is ready for what comes next.</p><div class=\"ds-rule\"></div><span>AI Agent</span></section>",
+      "css": ".ds-coming{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:400px;padding:70px 20px 110px;background:var(--background,#101015);color:var(--text,#efedf6);}.ds-coming-icon{display:grid;place-items:center;width:78px;height:78px;background:#1e1b28;border:1px solid #383040;border-radius:22px;color:#b8a6db;}.ds-coming-icon svg{width:32px;height:32px;}.ds-coming h2{margin:26px 0 9px;font-size:30px;letter-spacing:-.03em;font-weight:600;}.ds-coming p{margin:0;font-size:13px;color:#a99bb9;line-height:1.7;}.ds-rule{width:28px;height:1px;background:#44384d;margin:25px 0 17px;}.ds-coming>span{font-size:11px;color:#b6a3c6;line-height:1.8;}@media(max-width:520px){.ds-coming{min-height:360px;padding:65px 0 90px;}.ds-coming h2{font-size:27px;}}"
+    },
+    {
+      "name": "Account Popover",
+      "kind": "custom",
+      "description": "Demo identity and sign-out action.",
+      "html": "<div class=\"ds-popover\"><strong>Demo workspace</strong><span>demo@companymgmt.ai</span><small>Preview session</small><button>Sign out</button></div>",
+      "css": ".ds-popover{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);min-width:250px;padding:18px;background:#20202b;border:1px solid #3b3548;border-radius:12px;box-shadow:0 15px 45px #0006;color:var(--text,#efedf6);}.ds-popover strong,.ds-popover span,.ds-popover small{display:block;margin-bottom:7px;}.ds-popover strong,.ds-popover span{font-size:12px;}.ds-popover span{color:#b4a8c5;}.ds-popover small{font-size:10px;color:#b4a8c5;}.ds-popover button{font-family:var(--font-sans,\"Manrope Variable\",sans-serif);width:100%;margin-top:16px;padding:12px 0 0;background:transparent;border:0;border-top:1px solid #3b3548;color:#ddd2eb;font-size:12px;text-align:left;cursor:pointer;}.ds-popover button:focus-visible{outline:2px solid var(--accent,#b1a3ff);outline-offset:4px;}",
+      "refersTo": "popover"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dark Workspace",
+    "overview": "The current interface uses the user-requested professional dark direction: charcoal surfaces, a persistent workspace frame, and restrained lavender highlights. This record replaces the previous light directory direction and describes the implemented login and workspace shell.\n\nCompact navigation surrounds quiet placeholder destinations. Tonal layering separates the sidebar, topbar, content, and overlays, while self-hosted Manrope and Lucide outline icons provide a consistent visual language. The login's decorative workspace illustration is built with CSS rather than a bespoke image asset.",
+    "keyCharacteristics": [
+      "Charcoal surfaces with lavender accents.",
+      "Compact sidebar and topbar navigation.",
+      "Self-hosted Manrope and outline icons.",
+      "Explicit demo sign-in and placeholder destinations.",
+      "Responsive drawer navigation and visible focus."
+    ],
+    "rules": [],
+    "dos": [
+      "**Do** use the current charcoal and lavender palette with self-hosted Manrope.",
+      "**Do** keep active navigation, destination headings, and breadcrumbs consistent.",
+      "**Do** preserve accessible names, persistent field labels, visible focus, and reduced-motion support.",
+      "**Do** retain drawer navigation and 44px mobile touch controls.",
+      "**Do** label the demo session and keep every destination explicitly Coming soon."
+    ],
+    "donts": [
+      "**Don't** restore the previous light directory styling as the current design authority.",
+      "**Don't** imply demo sign-in protects API data or provides production authentication.",
+      "**Don't** add invented data, operational metrics, or working system features to placeholder pages.",
+      "**Don't** replace the compact shell with unrelated ornamental cards or icon styles."
+    ]
+  }
+}
