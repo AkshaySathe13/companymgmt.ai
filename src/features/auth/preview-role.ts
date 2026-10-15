@@ -9,18 +9,21 @@ export const previewRoles = {
     personId: "aaaaaaaa-0000-4000-8000-000000000001",
     name: "Evan Ross",
     canManage: true,
+    canEditCoreTeams: true,
   },
   manager: {
     label: "Team manager",
     personId: "aaaaaaaa-0000-4000-8000-000000000004",
     name: "Mira Sen",
     canManage: true,
+    canEditCoreTeams: false,
   },
   developer: {
     label: "Developer",
     personId: "aaaaaaaa-0000-4000-8000-000000000005",
     name: "Nina Patel",
     canManage: false,
+    canEditCoreTeams: false,
   },
 } as const;
 
@@ -35,6 +38,11 @@ function subscribe(listener: () => void) {
     window.removeEventListener(EVENT, listener);
     window.removeEventListener("storage", listener);
   };
+}
+
+/** The current preview role, read outside React (the API client sends it as X-Preview-Role). */
+export function currentPreviewRole(): PreviewRoleKey {
+  return snapshot();
 }
 
 function snapshot(): PreviewRoleKey {

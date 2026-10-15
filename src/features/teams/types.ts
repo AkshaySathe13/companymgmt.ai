@@ -33,6 +33,8 @@ export type Team = {
   icon: TeamIcon;
   leadId: string | null;
   lead: PersonSummary | null;
+  /** Core company team: only an executive can edit or delete it. */
+  isCore: boolean;
   memberCount: number;
   members: PersonSummary[];
   createdAt: string;

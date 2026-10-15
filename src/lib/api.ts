@@ -1,3 +1,5 @@
+import { currentPreviewRole } from "@/features/auth/preview-role";
+
 const baseUrl =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
@@ -21,6 +23,8 @@ export async function api<T>(
       ...options,
       headers: {
         ...(options.body ? { "Content-Type": "application/json" } : {}),
+        // Demo-only: the API checks team permissions against this role.
+        "X-Preview-Role": currentPreviewRole(),
         ...options.headers,
       },
       signal: options.signal

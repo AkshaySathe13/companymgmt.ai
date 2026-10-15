@@ -15,6 +15,7 @@ type T = {
   kind: string;
   icon: string;
   leadId: string;
+  isCore: boolean;
 };
 
 const pid = (n: number) =>
@@ -61,6 +62,7 @@ export function createMockApi({ aiConfigured = false } = {}) {
       kind: "LEADERSHIP",
       icon: "briefcase",
       leadId: pid(1),
+      isCore: true,
     },
     {
       id: tid(2),
@@ -69,6 +71,7 @@ export function createMockApi({ aiConfigured = false } = {}) {
       kind: "TECHNICAL",
       icon: "code",
       leadId: pid(4),
+      isCore: true,
     },
     {
       id: tid(3),
@@ -77,6 +80,7 @@ export function createMockApi({ aiConfigured = false } = {}) {
       kind: "TECHNICAL",
       icon: "sparkles",
       leadId: pid(9),
+      isCore: true,
     },
   ];
   let next = 100;
@@ -122,6 +126,8 @@ export function createMockApi({ aiConfigured = false } = {}) {
       const method = request.method();
       const body = request.postDataJSON?.() ?? null;
       const parts = path.split("/").filter(Boolean);
+      // Mirrors the API's demo permissions from the X-Preview-Role header.
+      const role = request.headers()["x-preview-role"] ?? "developer";
 
       if (path === "/ai/status")
         return route.fulfill({
@@ -154,6 +160,13 @@ export function createMockApi({ aiConfigured = false } = {}) {
         const t = parts[1] ? teams.find((x) => x.id === parts[1]) : undefined;
         if (method === "GET" && !parts[1])
           return route.fulfill({ json: { data: teams.map(team) } });
+        if (method !== "GET" && role === "developer")
+          return fail(
+            route,
+            403,
+            "FORBIDDEN",
+            "Your role can view teams but can't change them.",
+          );
         if (method === "POST" && !parts[1]) {
           if (
             teams.some((x) => x.name.toLowerCase() === body.name.toLowerCase())
@@ -171,6 +184,7 @@ export function createMockApi({ aiConfigured = false } = {}) {
             kind: body.kind,
             icon: body.icon,
             leadId: body.leadId,
+            isCore: false,
           };
           teams.push(created);
           people.find((p) => p.id === body.leadId)!.teamIds.push(created.id);
@@ -179,6 +193,24 @@ export function createMockApi({ aiConfigured = false } = {}) {
         if (!t) return fail(route, 404, "NOT_FOUND", "Team not found");
         if (method === "GET" && parts.length === 2)
           return route.fulfill({ json: { data: team(t) } });
+        if (
+          (method === "PATCH" || method === "DELETE") &&
+          parts.length === 2 &&
+          t.isCore &&
+          role !== "executive"
+        )
+          return fail(
+            route,
+            403,
+            "CORE_TEAM_LOCKED",
+            `${t.name} is a core company team. Only an executive can edit or delete it.`,
+          );
+        if (method === "PATCH" && parts.length === 2) {
+          Object.assign(t, body);
+          const lead = people.find((p) => p.id === t.leadId)!;
+          if (!lead.teamIds.includes(t.id)) lead.teamIds.push(t.id);
+          return route.fulfill({ json: { data: team(t) } });
+        }
         if (method === "DELETE" && parts.length === 2) {
           teams.splice(teams.indexOf(t), 1);
           people.forEach(

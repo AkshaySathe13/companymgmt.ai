@@ -103,6 +103,50 @@ test("managers create a team, add a member and delete it; developers can't", asy
   await expect(page.getByRole("button", { name: "New team" })).toHaveCount(0);
 });
 
+test("managers edit their own teams; core teams are executive-only", async ({
+  page,
+}) => {
+  await signIn(page, "/teams");
+  await page.getByRole("button", { name: "Account and preview role" }).click();
+  await page.getByRole("menuitemradio", { name: /Mira Sen/ }).click();
+
+  await page.getByRole("button", { name: "New team" }).click();
+  const drawer = page.getByRole("dialog", { name: "New team" });
+  await drawer.getByLabel("Team name").fill("Ops crew");
+  await drawer.getByLabel("Purpose").fill("Keeps the lights on");
+  await drawer
+    .getByLabel("Team lead")
+    .selectOption({ label: "Mira Sen · Engineering manager" });
+  await drawer.getByRole("button", { name: "Create team" }).click();
+  const panel = page.getByRole("dialog", { name: "Team" });
+  await panel.getByRole("button", { name: "Edit team" }).click();
+  await panel.getByLabel("Purpose").fill("Runs operations");
+  await panel.getByRole("button", { name: "Save changes" }).click();
+  await expect(panel.getByText("Runs operations")).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("row", { name: /C-suite/ }).dblclick();
+  await expect(
+    panel.getByText("Only an executive can edit or delete it."),
+  ).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Edit team" })).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Delete team" })).toHaveCount(
+    0,
+  );
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "Account and preview role" }).click();
+  await page.getByRole("menuitemradio", { name: /Evan Ross/ }).click();
+  await page.getByRole("row", { name: /C-suite/ }).dblclick();
+  await panel.getByRole("button", { name: "Edit team" }).click();
+  await panel.getByLabel("Purpose").fill("Leadership team");
+  await panel.getByRole("button", { name: "Save changes" }).click();
+  await expect(panel.getByText("Leadership team")).toBeVisible();
+  await expect(
+    panel.getByRole("button", { name: "Delete team" }),
+  ).toBeVisible();
+});
+
 test("Ask AI explains when the API key is missing", async ({ page }) => {
   await signIn(page);
   await expect(page.getByText("AI answers are off.")).toBeVisible();

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Lock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { Avatar, ErrorState, Skeleton, Tag, TeamAvatar } from "@/components/ui";
 import { peopleApi, teamsApi } from "./api";
@@ -109,6 +109,7 @@ export function TeamPanel({
   people,
   myPersonId,
   canManage,
+  canEditCoreTeams,
   onOpenPerson,
   onDeleted,
 }: {
@@ -117,6 +118,7 @@ export function TeamPanel({
   people: Person[];
   myPersonId: string;
   canManage: boolean;
+  canEditCoreTeams: boolean;
   onOpenPerson: (id: string) => void;
   onDeleted: () => void;
 }) {
@@ -140,6 +142,7 @@ export function TeamPanel({
   const outside = people.filter(
     (person) => !team.members.some((m) => m.id === person.id),
   );
+  const canChange = canManage && (!team.isCore || canEditCoreTeams);
   const act = async (run: () => Promise<Team>) => {
     setActionError("");
     try {
@@ -159,10 +162,11 @@ export function TeamPanel({
             {teamKindLabel[team.kind]} · {team.memberCount}{" "}
             {team.memberCount === 1 ? "member" : "members"}
             {team.members.some((m) => m.id === myPersonId) && " · My team"}
+            {team.isCore && " · Core team"}
           </p>
         </div>
       </div>
-      {editing ? (
+      {editing && canChange ? (
         <TeamForm
           team={team}
           people={people.filter((p) => p.kind === "STAFF")}
@@ -186,7 +190,13 @@ export function TeamPanel({
               })}
             </dd>
           </dl>
-          {canManage && (
+          {canManage && !canChange && (
+            <p className="cc-note">
+              <Lock size={13} aria-hidden="true" /> Core company team. Only an
+              executive can edit or delete it.
+            </p>
+          )}
+          {canChange && (
             <div className="cc-form-acts">
               <button className="cc-btn" onClick={() => setEditing(true)}>
                 <Pencil size={14} />
@@ -267,7 +277,7 @@ export function TeamPanel({
         )}
       </section>
 
-      {canManage && (
+      {canChange && (
         <section className="cc-sec">
           <ConfirmDelete
             what="team"

@@ -231,6 +231,7 @@ export function TeamsPage() {
                           <TeamAvatar icon={team.icon} />
                           <b>{team.name}</b>
                           {myTeamIds.includes(team.id) && <Tag>My team</Tag>}
+                          {team.isCore && <Tag>Core</Tag>}
                         </span>
                       </td>
                       <td className="hide-s">{team.lead?.name ?? "—"}</td>
@@ -257,6 +258,7 @@ export function TeamsPage() {
                       {teamKindLabel[preview.kind]} · {preview.memberCount}{" "}
                       members
                       {myTeamIds.includes(preview.id) && " · My team"}
+                      {preview.isCore && " · Core team"}
                     </p>
                   </div>
                 </div>
@@ -375,6 +377,7 @@ export function TeamsPage() {
               people={people}
               myPersonId={role.personId}
               canManage={role.canManage}
+              canEditCoreTeams={role.canEditCoreTeams}
               onOpenPerson={(id) =>
                 setParams({ team: null, view: "people", person: id })
               }
