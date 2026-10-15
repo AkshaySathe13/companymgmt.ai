@@ -7,7 +7,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       </span>
       {!compact && (
         <span className="brand-name">
-          companymgmt<span>.ai</span>
+          CarrierOS<span> Command Center</span>
         </span>
       )}
     </span>

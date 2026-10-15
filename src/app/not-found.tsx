@@ -6,7 +6,7 @@ export default function NotFound() {
       <Compass size={40} />
       <h1>Page not found</h1>
       <p>This destination isn’t part of your workspace.</p>
-      <Link href="/ai-agent" className="login-submit">
+      <Link href="/overview" className="login-submit">
         Return to workspace
       </Link>
     </main>

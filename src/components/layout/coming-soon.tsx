@@ -1,38 +1,44 @@
-import type { LucideIcon } from "lucide-react";
-import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, type LucideIcon } from "lucide-react";
+
 export function ComingSoon({
   title,
+  description,
   icon: Icon,
 }: {
   title: string;
+  description: string;
   icon: LucideIcon;
 }) {
   return (
-    <div className="destination-page">
-      <div className="page-heading">
-        <div className="page-title-line">
-          <span className="page-icon">
-            <Icon size={21} strokeWidth={1.7} />
-          </span>
+    <>
+      <header className="cc-ph">
+        <div>
           <h1>{title}</h1>
+          <p>{description}</p>
         </div>
-        <span className="page-status">
-          <span />
-          Coming soon
+        <span className="cc-tag">Coming soon</span>
+      </header>
+      <section className="cc-soon" aria-label={`${title} coming soon`}>
+        <span className="cc-soon-icon">
+          <Icon size={28} strokeWidth={1.5} />
         </span>
-      </div>
-      <section className="coming-soon" aria-label={`${title} coming soon`}>
-        <div className="coming-soon-icon">
-          <Icon size={32} strokeWidth={1.4} />
-          <span>
-            <ArrowUpRight size={14} />
-          </span>
-        </div>
         <h2>Coming soon</h2>
-        <p>This space is ready for what comes next.</p>
-        <div className="coming-soon-rule" />
-        <span className="coming-soon-caption">{title}</span>
+        <p>
+          This area is part of the Command Center plan and isn’t built yet.
+          Teams & members and the AI assistant on Company overview are ready to
+          use.
+        </p>
+        <div className="cc-soon-actions">
+          <Link className="cc-btn cc-btn-pri" href="/teams">
+            Open Teams & members
+            <ArrowRight size={14} />
+          </Link>
+          <Link className="cc-btn" href="/overview">
+            Ask AI
+          </Link>
+        </div>
       </section>
-    </div>
+    </>
   );
 }

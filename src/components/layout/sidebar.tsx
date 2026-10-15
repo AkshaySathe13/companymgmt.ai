@@ -1,134 +1,68 @@
 "use client";
 import Link from "next/link";
-import {
-  X,
-  Building2,
-  ChevronDown,
-  CircleHelp,
-  ArrowUpRight,
-} from "lucide-react";
-import { Brand } from "@/components/brand";
-import { aiAgent, systems } from "@/config/navigation";
+import { Layers3, X } from "lucide-react";
+import { navGroups, findNav } from "@/config/navigation";
+
 export function Sidebar({
-  mobile = false,
-  collapsed,
-  systemsOpen,
   pathname,
-  closeMobile,
-  onToggleSystems,
-  onHelp,
+  mobile = false,
+  onClose,
 }: {
-  mobile?: boolean;
-  collapsed: boolean;
-  systemsOpen: boolean;
   pathname: string;
-  closeMobile: () => void;
-  onToggleSystems: () => void;
-  onHelp: () => void;
+  mobile?: boolean;
+  onClose?: () => void;
 }) {
-  const mini = collapsed && !mobile;
+  const active = findNav(pathname);
   return (
-    <div className="sidebar-content">
-      <div className="sidebar-brand">
-        <Link
-          href="/ai-agent"
-          aria-label="Company management home"
-          onClick={closeMobile}
-        >
-          <Brand compact={mini} />
+    <div className="cc-side-in">
+      <div className="cc-brand">
+        <Link href="/overview" className="cc-brand-link" onClick={onClose}>
+          <span className="cc-brand-mark">
+            <Layers3 size={18} strokeWidth={1.9} />
+          </span>
+          <span>
+            <b>CarrierOS</b>
+            <small>Command Center</small>
+          </span>
         </Link>
         {mobile && (
           <button
-            className="icon-button"
+            className="cc-ib"
             aria-label="Close navigation"
-            onClick={closeMobile}
+            onClick={onClose}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
-        )}
-      </div>
-      <div className="workspace-chip">
-        <span className="workspace-avatar">
-          <Building2 size={18} />
-        </span>
-        {!mini && (
-          <div>
-            <strong>Company workspace</strong>
-            <span>Demo environment</span>
-          </div>
         )}
       </div>
       <nav
+        className="cc-nav"
         aria-label={mobile ? "Mobile navigation" : "Main navigation"}
-        className="sidebar-nav"
       >
-        {!mini && <p className="nav-group-label">Workspace</p>}
-        <Link
-          href={aiAgent.href}
-          aria-label="AI Agent"
-          onClick={closeMobile}
-          className={`nav-item ${pathname === aiAgent.href ? "active" : ""}`}
-          aria-current={pathname === aiAgent.href ? "page" : undefined}
-          title={mini ? aiAgent.title : undefined}
-        >
-          <aiAgent.icon size={19} />
-          {!mini && <span>{aiAgent.title}</span>}
-          {!mini && <span className="nav-ai-badge">AI</span>}
-        </Link>
-        {!mini && (
-          <button
-            className="systems-toggle"
-            onClick={onToggleSystems}
-            aria-expanded={systemsOpen}
-          >
-            <span>
-              Systems <span className="nav-count">10</span>
-            </span>
-            <ChevronDown
-              size={14}
-              className={systemsOpen ? "" : "rotate-closed"}
-            />
-          </button>
-        )}
-        {(mini || systemsOpen) && (
-          <div className="system-links">
-            {systems.map((item) => (
-              <Link
-                key={item.slug}
-                href={item.href}
-                onClick={closeMobile}
-                className={`nav-item ${pathname === item.href ? "active" : ""}`}
-                aria-current={pathname === item.href ? "page" : undefined}
-                title={mini ? item.title : undefined}
-                aria-label={mini ? item.title : undefined}
-              >
-                <item.icon size={18} />
-                {!mini && <span>{item.title}</span>}
-              </Link>
-            ))}
+        {navGroups.map((group) => (
+          <div key={group.label} className="cc-nav-group">
+            <p className="cc-nav-g">{group.label}</p>
+            {group.items.map((nav) => {
+              const current = active?.href === nav.href;
+              return (
+                <Link
+                  key={nav.href}
+                  href={nav.href}
+                  className={`cc-nav-a ${current ? "on" : ""}`}
+                  aria-current={current ? "page" : undefined}
+                  onClick={onClose}
+                >
+                  <nav.icon size={16} strokeWidth={1.8} />
+                  <span>{nav.title}</span>
+                </Link>
+              );
+            })}
           </div>
-        )}
+        ))}
       </nav>
-      <div className="sidebar-bottom">
-        <button
-          className="sidebar-help"
-          onClick={onHelp}
-          title={mini ? "Workspace guide" : undefined}
-        >
-          <CircleHelp size={18} />
-          {!mini && (
-            <>
-              <span>Workspace guide</span>
-              <ArrowUpRight size={15} />
-            </>
-          )}
-        </button>
-        {!mini && (
-          <div className="sidebar-preview">
-            <span className="status-dot" />
-            Layout preview<span>v0.1</span>
-          </div>
-        )}
+      <div className="cc-side-foot">
+        <span className="cc-dot" />
+        Demo session · fictional data
       </div>
     </div>
   );
