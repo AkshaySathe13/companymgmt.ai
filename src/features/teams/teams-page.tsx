@@ -1,26 +1,40 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Plus, Search } from "lucide-react";
-import { ApiError } from "@/lib/api";
+import { Plus, Search } from "lucide-react";
+import { errorMessage } from "@/lib/api";
 import {
-  Avatar,
   AvatarStack,
+  Button,
+  compactSelectClasses,
+  DataTable,
   EmptyState,
   ErrorState,
+  nameClasses,
+  Note,
+  PageHeader,
   Skeleton,
+  tableClasses,
   Tag,
   TeamAvatar,
 } from "@/components/ui";
-import { usePreviewRole } from "@/features/auth/preview-role";
-import { onDataChanged, peopleApi, teamsApi } from "./api";
+import { useAccess } from "@/features/auth/session";
 import { Drawer } from "./drawer";
 import { PersonForm, TeamForm } from "./forms";
 import { PersonPanel, TeamPanel } from "./panels";
-import { teamKindLabel, workModeLabel, type Person, type Team } from "./types";
+import { PeopleTable } from "./people-table";
+import { TeamPreview } from "./team-preview";
+import { usePeople, useTeams } from "./queries";
+
+const teamColumns = [
+  { label: "Team", className: "pl-3" },
+  { label: "Lead", className: tableClasses.hideOnPhone },
+  { label: "Members" },
+];
 
 export function TeamsPage() {
-  const role = usePreviewRole();
+  const access = useAccess();
+  const { me } = access;
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -29,24 +43,49 @@ export function TeamsPage() {
   const openPersonId = params.get("person");
   const creating = params.get("new");
 
-  const [teams, setTeams] = useState<Team[] | null>(null);
-  const [people, setPeople] = useState<Person[] | null>(null);
-  const [error, setError] = useState("");
+  const teamsQuery = useTeams();
+  const peopleQuery = usePeople();
+  const teams = teamsQuery.data;
+  const people = peopleQuery.data;
+  // A failed background refresh keeps showing the cached data; only a failed first load errors.
+  const loadError =
+    (!teams && teamsQuery.error) || (!people && peopleQuery.error);
+  const error = loadError
+    ? errorMessage(loadError, "Couldn't load teams.")
+    : "";
+  const retry = () => {
+    void teamsQuery.refetch();
+    void peopleQuery.refetch();
+  };
   const [query, setQuery] = useState("");
-  // The chosen filter remembers which preview person chose it, so switching role resets it.
+  // The chosen filter and team remember who chose them, so another user starts on their own team.
   const [chosenFilter, setChosenFilter] = useState<{
     owner: string;
     teamId: string;
   } | null>(null);
   const setTeamFilter = (teamId: string) =>
-    setChosenFilter({ owner: role.personId, teamId });
+    setChosenFilter({ owner: me.id, teamId });
   // Same for the selected team: it starts on the signed-in person's team until they click another.
   const [chosenTeam, setChosenTeam] = useState<{
     owner: string;
     teamId: string;
   } | null>(null);
   const selectTeam = (teamId: string) =>
-    setChosenTeam({ owner: role.personId, teamId });
+    setChosenTeam({ owner: me.id, teamId });
+  // Hovering a row previews its details without changing the selection; leaving the table
+  // shows the selected team again. The short delay stops a quick sweep from flashing every team.
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const cancelHover = () => clearTimeout(hoverTimer.current);
+  const hoverTeam = (teamId: string) => {
+    cancelHover();
+    hoverTimer.current = setTimeout(() => setHoveredId(teamId), 120);
+  };
+  const endHover = () => {
+    cancelHover();
+    setHoveredId(null);
+  };
+  useEffect(() => cancelHover, []);
 
   const setParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -63,35 +102,16 @@ export function TeamsPage() {
     [params, pathname, router],
   );
 
-  const load = useCallback(() => {
-    Promise.all([teamsApi.list(), peopleApi.list()])
-      .then(([nextTeams, nextPeople]) => {
-        setTeams(nextTeams);
-        setPeople(nextPeople);
-        setError("");
-      })
-      .catch((caught) =>
-        setError(
-          caught instanceof ApiError ? caught.message : "Couldn't load teams.",
-        ),
-      );
-  }, []);
-
-  useEffect(() => {
-    load();
-    return onDataChanged(load);
-  }, [load]);
-
   // People open on the signed-in person's own team; the filter can widen it to everyone.
   const myTeamIds = useMemo(
     () =>
       teams
-        ?.filter((t) => t.members.some((m) => m.id === role.personId))
+        ?.filter((t) => t.members.some((m) => m.id === me.id))
         .map((t) => t.id) ?? [],
-    [teams, role.personId],
+    [teams, me.id],
   );
   const filter =
-    (chosenFilter?.owner === role.personId ? chosenFilter.teamId : null) ??
+    (chosenFilter?.owner === me.id ? chosenFilter.teamId : null) ??
     myTeamIds[0] ??
     "all";
   const q = query.trim().toLowerCase();
@@ -99,17 +119,18 @@ export function TeamsPage() {
   const shownTeams = (teams ?? []).filter((team) =>
     team.name.toLowerCase().includes(q),
   );
-  const preview =
+  const selected =
     shownTeams.find(
-      (t) => chosenTeam?.owner === role.personId && t.id === chosenTeam.teamId,
+      (t) => chosenTeam?.owner === me.id && t.id === chosenTeam.teamId,
     ) ??
     shownTeams.find((t) => myTeamIds.includes(t.id)) ??
     shownTeams[0];
+  const preview = shownTeams.find((t) => t.id === hoveredId) ?? selected;
 
   const shownPeople = (people ?? []).filter(
     (person) =>
       (filter === "all" || person.teams.some((t) => t.id === filter)) &&
-      `${person.name} ${person.role} ${person.location} ${person.email}`
+      `${person.name} ${person.jobTitle} ${person.location} ${person.email}`
         .toLowerCase()
         .includes(q),
   );
@@ -119,27 +140,26 @@ export function TeamsPage() {
 
   return (
     <>
-      <header className="cc-ph">
-        <div>
-          <h1>Teams & members</h1>
-          <p>Every team, its members and their connected work.</p>
-        </div>
-      </header>
-      <div className="cc-bar">
-        <nav className="cc-tabs" role="tablist" aria-label="Teams and people">
+      <PageHeader title="Teams & members" />
+      <div className="flex items-end justify-between gap-3 flex-wrap border-b border-line mb-3.5">
+        <nav
+          className="flex gap-0.5"
+          role="tablist"
+          aria-label="Teams and people"
+        >
           {(["teams", "people"] as const).map((tab) => (
             <button
               key={tab}
               role="tab"
               aria-selected={view === tab}
-              className={view === tab ? "on" : ""}
+              className={`relative inline-flex items-center gap-1.5 h-9.5 px-2.5 text-[13.5px] font-medium hover:text-white ${view === tab ? "text-white after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-t-[2px] after:bg-white after:content-['']" : "text-dim"}`}
               onClick={() => {
                 setQuery("");
                 setParams({ view: tab === "teams" ? null : "people" });
               }}
             >
               {tab === "teams" ? "Teams" : "People"}
-              <span>
+              <span className="text-[11px] text-faint">
                 {tab === "teams"
                   ? (teams?.length ?? "")
                   : (people?.length ?? "")}
@@ -147,11 +167,12 @@ export function TeamsPage() {
             </button>
           ))}
         </nav>
-        <div className="cc-tools">
-          <label className="cc-fsearch">
+        <div className="flex items-center gap-1.5 pb-1.5 max-phone:w-full">
+          <label className="flex items-center gap-[7px] h-7.5 w-50 px-2.5 rounded-[9px] bg-raised border border-line text-dim focus-within:border-line-hover max-phone:flex-1 max-phone:w-auto">
             <Search size={14} />
             <span className="sr-only">Search {view}</span>
             <input
+              className="flex-1 min-w-0 bg-transparent text-[13px] outline-none focus-visible:outline-none"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={view === "teams" ? "Search teams" : "Search people"}
@@ -159,11 +180,12 @@ export function TeamsPage() {
             />
           </label>
           {view === "people" && (
-            <span className="cc-sel">
+            <span>
               <label className="sr-only" htmlFor="team-filter">
                 Team
               </label>
               <select
+                className={compactSelectClasses}
                 id="team-filter"
                 value={filter}
                 onChange={(event) => setTeamFilter(event.target.value)}
@@ -178,145 +200,91 @@ export function TeamsPage() {
               </select>
             </span>
           )}
-          {role.canManage && (
-            <button
-              className="cc-btn cc-btn-pri cc-btn-sq"
-              aria-label={view === "teams" ? "New team" : "Add person"}
-              data-tip={view === "teams" ? "New team" : "Add person"}
+          {(view === "teams" ? access.administer : access.managesAnyTeam) && (
+            <Button
+              variant="primary"
+              square
+              aria-label={view === "teams" ? "New team" : "Add user"}
+              data-tip={view === "teams" ? "New team" : "Add user"}
               onClick={() =>
                 setParams({ new: view === "teams" ? "team" : "person" })
               }
             >
               <Plus size={15} />
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {error ? (
-        <ErrorState message={error} onRetry={load} />
+        <ErrorState message={error} onRetry={retry} />
       ) : !teams || !people ? (
         <Skeleton rows={6} />
       ) : view === "teams" ? (
         shownTeams.length ? (
-          <div className="cc-split">
-            <div className="cc-tw">
-              <table className="cc-t">
-                <thead>
-                  <tr>
-                    <th>Team</th>
-                    <th className="hide-s">Lead</th>
-                    <th>Members</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shownTeams.map((team) => (
-                    <tr
-                      key={team.id}
-                      className={`cc-click ${team.id === preview?.id ? "pv" : ""}`}
-                      tabIndex={0}
-                      aria-selected={team.id === preview?.id}
-                      onClick={() => selectTeam(team.id)}
-                      onDoubleClick={() => setParams({ team: team.id })}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") setParams({ team: team.id });
-                        else if (event.key === " ") {
-                          event.preventDefault();
-                          selectTeam(team.id);
-                        }
-                      }}
-                    >
-                      <td>
-                        <span className="cc-who">
-                          <TeamAvatar icon={team.icon} />
-                          <b>{team.name}</b>
-                          {myTeamIds.includes(team.id) && <Tag>My team</Tag>}
-                          {team.isCore && <Tag>Core</Tag>}
-                        </span>
-                      </td>
-                      <td className="hide-s">{team.lead?.name ?? "—"}</td>
-                      <td>
-                        <AvatarStack names={team.members.map((m) => m.name)} />
-                        <span className="cc-dim">{team.memberCount}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {preview && (
-              <aside
-                className="cc-prev"
-                aria-live="polite"
-                aria-label="Team details"
-              >
-                <div className="cc-who">
-                  <TeamAvatar icon={preview.icon} size="lg" />
-                  <div>
-                    <h2>{preview.name}</h2>
-                    <p className="cc-sub">
-                      {teamKindLabel[preview.kind]} · {preview.memberCount}{" "}
-                      members
-                      {myTeamIds.includes(preview.id) && " · My team"}
-                      {preview.isCore && " · Core team"}
-                    </p>
-                  </div>
-                </div>
-                <p className="cc-desc">{preview.purpose}</p>
-                <h4>Lead</h4>
-                {preview.lead ? (
-                  <button
-                    className="cc-row cc-plain"
-                    onClick={() =>
-                      setParams({ view: "people", person: preview.lead!.id })
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(290px,0.8fr)] gap-5 items-start max-laptop:grid-cols-1">
+            <DataTable
+              columns={teamColumns}
+              bodyProps={{ onMouseLeave: endHover }}
+            >
+              {shownTeams.map((team) => (
+                <tr
+                  key={team.id}
+                  className={
+                    team.id === selected?.id
+                      ? "cursor-pointer focus-visible:outline-none [&>td]:bg-[#101010] [&>td:first-child]:shadow-[inset_2px_0_0_#fff]"
+                      : tableClasses.clickableRow
+                  }
+                  tabIndex={0}
+                  aria-selected={team.id === selected?.id}
+                  onMouseEnter={() => hoverTeam(team.id)}
+                  onMouseLeave={cancelHover}
+                  onClick={() => {
+                    endHover();
+                    selectTeam(team.id);
+                  }}
+                  onDoubleClick={() => setParams({ team: team.id })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") setParams({ team: team.id });
+                    else if (event.key === " ") {
+                      event.preventDefault();
+                      selectTeam(team.id);
                     }
-                  >
-                    <Avatar name={preview.lead.name} />
-                    <span className="cc-grow">
-                      <b>{preview.lead.name}</b>
-                      <small>{preview.lead.role}</small>
+                  }}
+                >
+                  <td className={`${tableClasses.cell} pl-3`}>
+                    <span className={nameClasses.wrap}>
+                      <TeamAvatar icon={team.icon} />
+                      <b className={nameClasses.name}>{team.name}</b>
+                      {myTeamIds.includes(team.id) && <Tag>My team</Tag>}
+                      {team.isCore && <Tag>Core</Tag>}
                     </span>
-                  </button>
-                ) : (
-                  <p className="cc-note">No lead yet.</p>
-                )}
-                <h4>Members</h4>
-                {preview.members
-                  .filter((member) => member.id !== preview.leadId)
-                  .map((member) => (
-                    <button
-                      key={member.id}
-                      className="cc-row cc-plain"
-                      onClick={() =>
-                        setParams({ view: "people", person: member.id })
-                      }
-                    >
-                      <Avatar name={member.name} size="xs" />
-                      <span className="cc-grow cc-inline-name">
-                        <b>{member.name}</b>
-                        <small>{member.role}</small>
-                      </span>
-                    </button>
-                  ))}
-                <div className="cc-form-acts">
-                  <button
-                    className="cc-btn"
-                    onClick={() => {
-                      setTeamFilter(preview.id);
-                      setParams({ view: "people" });
-                    }}
+                  </td>
+                  <td
+                    className={`${tableClasses.cell} ${tableClasses.hideOnPhone}`}
                   >
-                    View people
-                  </button>
-                  <button
-                    className="cc-btn"
-                    onClick={() => setParams({ team: preview.id })}
-                  >
-                    Open team
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-              </aside>
+                    {team.lead?.name ?? "—"}
+                  </td>
+                  <td className={tableClasses.cell}>
+                    <AvatarStack names={team.members.map((m) => m.name)} />
+                    <span className="text-dim">{team.memberCount}</span>
+                  </td>
+                </tr>
+              ))}
+            </DataTable>
+            {preview && (
+              <TeamPreview
+                team={preview}
+                isMyTeam={myTeamIds.includes(preview.id)}
+                onOpenPerson={(personId) =>
+                  setParams({ view: "people", person: personId })
+                }
+                onViewPeople={() => {
+                  setTeamFilter(preview.id);
+                  setParams({ view: "people" });
+                }}
+                onOpenTeam={() => setParams({ team: preview.id })}
+              />
             )}
           </div>
         ) : (
@@ -327,7 +295,7 @@ export function TeamsPage() {
           people={shownPeople}
           teams={teams}
           grouped={filter === "all" && !q}
-          myPersonId={role.personId}
+          myPersonId={me.id}
           onOpen={(id) => setParams({ person: id })}
         />
       ) : (
@@ -348,20 +316,20 @@ export function TeamsPage() {
           }
           onClose={close}
         >
-          {creating === "team" && role.canManage ? (
+          {creating === "team" && access.administer ? (
             <>
-              <h2 className="cc-form-title">New team</h2>
+              <h2 className="mb-3 text-[18px]">New team</h2>
               <TeamForm
                 people={staff}
                 onSaved={(team) => setParams({ new: null, team: team.id })}
                 onCancel={close}
               />
             </>
-          ) : creating === "person" && role.canManage ? (
+          ) : creating === "person" && access.managesAnyTeam ? (
             <>
-              <h2 className="cc-form-title">Add person</h2>
+              <h2 className="mb-3 text-[18px]">Add user</h2>
               <PersonForm
-                teams={teams}
+                teams={teams.filter((t) => access.managesTeam(t.id))}
                 defaultTeamId={filter === "all" ? undefined : filter}
                 onSaved={(person) =>
                   setParams({ new: null, person: person.id })
@@ -373,11 +341,8 @@ export function TeamsPage() {
             <TeamPanel
               key={openTeamId}
               teamId={openTeamId}
-              initial={teams.find((t) => t.id === openTeamId)}
               people={people}
-              myPersonId={role.personId}
-              canManage={role.canManage}
-              canEditCoreTeams={role.canEditCoreTeams}
+              access={access}
               onOpenPerson={(id) =>
                 setParams({ team: null, view: "people", person: id })
               }
@@ -387,101 +352,18 @@ export function TeamsPage() {
             <PersonPanel
               key={openPersonId}
               personId={openPersonId}
-              initial={people.find((p) => p.id === openPersonId)}
               teams={teams}
-              myPersonId={role.personId}
-              canManage={role.canManage}
+              access={access}
               onOpenTeam={(id) =>
                 setParams({ person: null, view: null, team: id })
               }
               onDeleted={close}
             />
           ) : (
-            <p className="cc-note">Your preview role can’t add records.</p>
+            <Note>Your role can’t add teams or users.</Note>
           )}
         </Drawer>
       )}
     </>
-  );
-}
-
-function PeopleTable({
-  people,
-  teams,
-  grouped,
-  myPersonId,
-  onOpen,
-}: {
-  people: Person[];
-  teams: Team[];
-  grouped: boolean;
-  myPersonId: string;
-  onOpen: (id: string) => void;
-}) {
-  const row = (person: Person, group = "") => (
-    <tr
-      key={`${group}-${person.id}`}
-      className="cc-click"
-      tabIndex={0}
-      onClick={() => onOpen(person.id)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") onOpen(person.id);
-      }}
-    >
-      <td>
-        <span className="cc-who">
-          <Avatar name={person.name} />
-          <b>{person.name}</b>
-          {person.id === myPersonId && <Tag>Me</Tag>}
-        </span>
-      </td>
-      <td>{person.role}</td>
-      <td className="hide-s">
-        <span className="cc-tags">
-          {person.teams.map((team) => (
-            <Tag key={team.id}>{team.name}</Tag>
-          ))}
-        </span>
-      </td>
-      <td className="hide-s cc-dim">
-        {person.location} · {person.timezone}
-      </td>
-      <td className="hide-s">{workModeLabel[person.workMode]}</td>
-    </tr>
-  );
-  return (
-    <div className="cc-tw">
-      <table className="cc-t">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Role</th>
-            <th className="hide-s">Teams</th>
-            <th className="hide-s">Location</th>
-            <th className="hide-s">Works</th>
-          </tr>
-        </thead>
-        <tbody>
-          {grouped
-            ? teams.map((team) => {
-                const members = people.filter((p) =>
-                  p.teams.some((t) => t.id === team.id),
-                );
-                return members.length
-                  ? [
-                      <tr key={`g-${team.id}`} className="cc-g">
-                        <td colSpan={5}>
-                          {team.name}
-                          <span>{members.length}</span>
-                        </td>
-                      </tr>,
-                      ...members.map((person) => row(person, team.id)),
-                    ]
-                  : null;
-              })
-            : people.map((person) => row(person))}
-        </tbody>
-      </table>
-    </div>
   );
 }

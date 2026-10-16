@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, UserRound, UsersRound } from "lucide-react";
 import { navigation } from "@/config/navigation";
-import { peopleApi, teamsApi } from "@/features/teams/api";
-import type { Person, Team } from "@/features/teams/types";
+import { kbdClasses, noteClasses } from "@/components/ui";
+import { usePeople, useTeams } from "@/features/teams/queries";
 
 type Result = {
   key: string;
@@ -17,18 +17,22 @@ type Result = {
 export function CommandPalette({
   open,
   onClose,
+  canOpen,
 }: {
   open: boolean;
   onClose: () => void;
+  /** Whether the signed-in user's roles include a section. */
+  canOpen: (slug: string) => boolean;
 }) {
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const [records, setRecords] = useState<{ teams: Team[]; people: Person[] }>({
-    teams: [],
-    people: [],
-  });
+  // Loaded when the palette first opens, then shared with the rest of the app's cache.
+  const records = {
+    teams: useTeams(open && canOpen("teams")).data ?? [],
+    people: usePeople({}, open && canOpen("teams")).data ?? [],
+  };
 
   useEffect(() => {
     const element = dialog.current;
@@ -37,14 +41,7 @@ export function CommandPalette({
       element.showModal();
       setQuery("");
       setActive(0);
-      const controller = new AbortController();
-      Promise.all([
-        teamsApi.list(controller.signal),
-        peopleApi.list({}, controller.signal),
-      ])
-        .then(([teams, people]) => setRecords({ teams, people }))
-        .catch(() => setRecords({ teams: [], people: [] }));
-      return () => controller.abort();
+      return;
     }
     if (!open && element.open) element.close();
   }, [open]);
@@ -52,7 +49,7 @@ export function CommandPalette({
   const q = query.trim().toLowerCase();
   const results: Result[] = [
     ...navigation
-      .filter((nav) => nav.title.toLowerCase().includes(q))
+      .filter((nav) => canOpen(nav.slug) && nav.title.toLowerCase().includes(q))
       .map((nav) => ({
         key: nav.href,
         title: nav.title,
@@ -73,12 +70,12 @@ export function CommandPalette({
             })),
           ...records.people
             .filter((person) =>
-              `${person.name} ${person.role}`.toLowerCase().includes(q),
+              `${person.name} ${person.jobTitle}`.toLowerCase().includes(q),
             )
             .map((person) => ({
               key: person.id,
               title: person.name,
-              kind: person.role,
+              kind: person.jobTitle,
               href: `/teams?view=people&person=${person.id}`,
               icon: UserRound,
             })),
@@ -95,16 +92,17 @@ export function CommandPalette({
   return (
     <dialog
       ref={dialog}
-      className="cc-pal"
+      className="w-[min(560px,calc(100%-32px))] mt-[12vh] mx-auto mb-auto p-0 border border-line-strong rounded-[14px] bg-[#111] text-fg shadow-[0_30px_80px_#000c] backdrop:bg-[#000a]"
       aria-label="Search"
       onClose={onClose}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="cc-pal-in">
+      <div className="flex items-center gap-2.5 py-3 px-3.5 border-b border-line-strong text-dim">
         <Search size={17} />
         <input
+          className="flex-1 bg-transparent text-[15px] text-fg outline-none focus-visible:outline-none"
           autoFocus
           value={query}
           placeholder="Search pages, teams and people…"
@@ -128,29 +126,37 @@ export function CommandPalette({
             }
           }}
         />
-        <kbd>Esc</kbd>
+        <kbd className={kbdClasses}>Esc</kbd>
       </div>
-      <div className="cc-pal-list" id="cc-pal-list" role="listbox">
+      <div
+        className="max-h-[min(420px,55vh)] overflow-y-auto p-1.5"
+        id="cc-pal-list"
+        role="listbox"
+      >
         {results.length ? (
           results.map((result, index) => (
             <button
               key={result.key}
               role="option"
               aria-selected={index === active}
-              className={index === active ? "on" : ""}
+              className={`flex items-center gap-2.5 w-full py-[9px] px-2.5 rounded-[9px] text-fg text-left cursor-pointer${index === active ? " bg-[#1d1d1d]" : ""}`}
               onMouseEnter={() => setActive(index)}
               onClick={() => go(result)}
             >
               <result.icon size={15} />
-              <b>{result.title}</b>
-              <small>{result.kind}</small>
+              <b className="font-medium text-[13.5px]">{result.title}</b>
+              <small className="ml-auto text-[11.5px] text-faint">
+                {result.kind}
+              </small>
             </button>
           ))
         ) : (
-          <p className="cc-note">No results. Try another name.</p>
+          <p className={`${noteClasses} text-dim p-2.5`}>
+            No results. Try another name.
+          </p>
         )}
       </div>
-      <div className="cc-pal-foot">
+      <div className="flex gap-3 py-2 px-3.5 border-t border-line-strong text-[11.5px] text-faint">
         <span>↑↓ to move</span>
         <span>Enter to open</span>
         <span>Esc to close</span>

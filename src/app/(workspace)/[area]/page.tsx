@@ -28,11 +28,5 @@ export default async function AreaPage({
   const { area } = await params;
   const nav = comingSoonAreas.find((item) => item.slug === area);
   if (!nav) notFound();
-  return (
-    <ComingSoon
-      title={nav.title}
-      description={nav.description}
-      icon={nav.icon}
-    />
-  );
+  return <ComingSoon title={nav.title} icon={nav.icon} />;
 }

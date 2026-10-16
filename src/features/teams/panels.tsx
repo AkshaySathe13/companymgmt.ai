@@ -1,188 +1,157 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Lock, Pencil, Plus, Trash2, X } from "lucide-react";
-import { ApiError } from "@/lib/api";
-import { Avatar, ErrorState, Skeleton, Tag, TeamAvatar } from "@/components/ui";
-import { peopleApi, teamsApi } from "./api";
+import { useState, type ReactNode } from "react";
+import { KeyRound, Lock, Pencil, UserCheck, UserX } from "lucide-react";
+import { errorMessage } from "@/lib/api";
+import type { Access } from "@/features/auth/session";
+import {
+  Avatar,
+  Button,
+  ConfirmDelete,
+  ErrorState,
+  Field,
+  FormActions,
+  InlineError,
+  inputClasses,
+  Note,
+  Section,
+  Skeleton,
+  Tag,
+  TeamAvatar,
+} from "@/components/ui";
+import { AddPicker } from "./add-picker";
 import { PersonForm, TeamForm } from "./forms";
+import {
+  useAddMember,
+  useDeletePerson,
+  useDeleteTeam,
+  usePerson,
+  useRemoveMember,
+  useResetPassword,
+  useTeam,
+  useUpdatePerson,
+} from "./queries";
+import { RecordRow } from "./record-row";
 import { teamKindLabel, workModeLabel, type Person, type Team } from "./types";
 
-const messageFor = (error: unknown) =>
-  error instanceof ApiError
-    ? error.message
-    : "That didn't work. Please try again.";
+/** Manager roles (held by team leads) as opposed to member roles. */
+const isManagerRole = (role: string) =>
+  role === "LEADERSHIP_LEAD" || role.endsWith("_MANAGER");
 
-// Shows the list copy straight away (no loading flash), then refreshes it from the API.
-function useRecord<T>(
-  load: (signal: AbortSignal) => Promise<T>,
-  key: string,
-  initial?: T,
-) {
-  const [record, setRecord] = useState<T | null>(initial ?? null);
-  const [error, setError] = useState("");
-  const [nonce, setNonce] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal)
-      .then((next) => {
-        setRecord(next);
-        setError("");
-      })
-      .catch((caught) => {
-        if (caught instanceof DOMException && caught.name === "AbortError")
-          return;
-        setError(messageFor(caught));
-      });
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when the record key changes
-  }, [key, nonce]);
-  return {
-    record,
-    setRecord,
-    error,
-    reload: () => {
-      setError("");
-      setNonce((n) => n + 1);
-    },
-  };
-}
-
-function ConfirmDelete({
-  what,
-  onConfirm,
+/** Drawer header: avatar, name and a one-line summary. */
+function DrawerHeader({
+  avatar,
+  title,
+  summary,
 }: {
-  what: string;
-  onConfirm: () => Promise<void>;
+  avatar: ReactNode;
+  title: ReactNode;
+  summary: ReactNode;
 }) {
-  const [asking, setAsking] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  if (!asking)
-    return (
-      <button className="cc-btn cc-btn-danger" onClick={() => setAsking(true)}>
-        <Trash2 size={14} />
-        Delete {what}
-      </button>
-    );
   return (
-    <div
-      className="cc-confirm"
-      role="alertdialog"
-      aria-label={`Delete ${what}`}
-    >
-      <span>Delete this {what}? This can’t be undone.</span>
-      <button
-        className="cc-btn cc-btn-danger"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setError("");
-          try {
-            await onConfirm();
-          } catch (caught) {
-            setError(messageFor(caught));
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? "Deleting…" : "Delete"}
-      </button>
-      <button
-        className="cc-btn"
-        onClick={() => setAsking(false)}
-        disabled={busy}
-      >
-        Keep
-      </button>
-      {error && (
-        <p className="cc-ferr" role="alert">
-          {error}
-        </p>
-      )}
+    <div className="flex items-center gap-3 mb-3.5">
+      {avatar}
+      <div>
+        <h2 className="text-[18px] font-[650]">{title}</h2>
+        <p className="mt-[3px] text-[12.5px] text-dim">{summary}</p>
+      </div>
     </div>
   );
 }
 
+/**
+ * Add and remove membership mutations sharing one error line. `add` resolves true on success,
+ * so the add picker only clears when the person was added.
+ */
+function useMembership() {
+  const addMember = useAddMember();
+  const removeMember = useRemoveMember();
+  const [error, setError] = useState("");
+  const run = async (action: () => Promise<unknown>) => {
+    setError("");
+    try {
+      await action();
+      return true;
+    } catch (caught) {
+      setError(errorMessage(caught));
+      return false;
+    }
+  };
+  return {
+    error,
+    add: (teamId: string, personId: string) =>
+      run(() => addMember.mutateAsync({ teamId, personId })),
+    remove: (teamId: string, personId: string) =>
+      run(() => removeMember.mutateAsync({ teamId, personId })),
+  };
+}
+
+/** Label/value pairs in a drawer. */
+const detailListClasses =
+  "grid grid-cols-[auto_1fr] gap-x-4.5 gap-y-2 text-[13px] [&_dt]:text-dim [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]";
+
+const loadError = (error: unknown) => (error ? errorMessage(error) : "");
+
 export function TeamPanel({
   teamId,
-  initial,
   people,
-  myPersonId,
-  canManage,
-  canEditCoreTeams,
+  access,
   onOpenPerson,
   onDeleted,
 }: {
   teamId: string;
-  initial?: Team;
   people: Person[];
-  myPersonId: string;
-  canManage: boolean;
-  canEditCoreTeams: boolean;
+  access: Access;
   onOpenPerson: (id: string) => void;
   onDeleted: () => void;
 }) {
-  const {
-    record: team,
-    setRecord,
-    error,
-    reload,
-  } = useRecord<Team>(
-    (signal) => teamsApi.get(teamId, signal),
-    teamId,
-    initial,
-  );
+  const { data: team, error, refetch } = useTeam(teamId);
+  const deleteTeam = useDeleteTeam();
+  const membership = useMembership();
   const [editing, setEditing] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const [adding, setAdding] = useState("");
 
-  if (error) return <ErrorState message={error} onRetry={reload} />;
+  if (!team && error)
+    return <ErrorState message={loadError(error)} onRetry={refetch} />;
   if (!team) return <Skeleton rows={6} />;
 
+  // Only the Leadership Lead edits teams; a team's manager manages who is in it.
+  const canEdit = access.administer;
+  const canManageMembers = access.managesTeam(team.id);
   const outside = people.filter(
     (person) => !team.members.some((m) => m.id === person.id),
   );
-  const canChange = canManage && (!team.isCore || canEditCoreTeams);
-  const act = async (run: () => Promise<Team>) => {
-    setActionError("");
-    try {
-      setRecord(await run());
-    } catch (caught) {
-      setActionError(messageFor(caught));
-    }
-  };
+  const teamCountOf = (personId: string) =>
+    people.find((p) => p.id === personId)?.teams.length ?? 0;
 
   return (
     <>
-      <div className="cc-dr-h">
-        <TeamAvatar icon={team.icon} size="lg" />
-        <div>
-          <h2>{team.name}</h2>
-          <p>
+      <DrawerHeader
+        avatar={<TeamAvatar icon={team.icon} size="lg" />}
+        title={team.name}
+        summary={
+          <>
             {teamKindLabel[team.kind]} · {team.memberCount}{" "}
             {team.memberCount === 1 ? "member" : "members"}
-            {team.members.some((m) => m.id === myPersonId) && " · My team"}
+            {access.inTeam(team.id) && " · My team"}
             {team.isCore && " · Core team"}
-          </p>
-        </div>
-      </div>
-      {editing && canChange ? (
+          </>
+        }
+      />
+      {editing && canEdit ? (
         <TeamForm
           team={team}
           people={people.filter((p) => p.kind === "STAFF")}
-          onSaved={(saved) => {
-            setRecord(saved);
-            setEditing(false);
-          }}
+          onSaved={() => setEditing(false)}
           onCancel={() => setEditing(false)}
         />
       ) : (
         <>
-          <dl className="cc-kv">
+          <dl className={detailListClasses}>
             <dt>Purpose</dt>
             <dd>{team.purpose}</dd>
             <dt>Lead</dt>
-            <dd>{team.lead ? `${team.lead.name} · ${team.lead.role}` : "—"}</dd>
+            <dd>
+              {team.lead ? `${team.lead.name} · ${team.lead.jobTitle}` : "—"}
+            </dd>
             <dt>Created</dt>
             <dd>
               {new Date(team.createdAt).toLocaleDateString(undefined, {
@@ -190,180 +159,220 @@ export function TeamPanel({
               })}
             </dd>
           </dl>
-          {canManage && !canChange && (
-            <p className="cc-note">
-              <Lock size={13} aria-hidden="true" /> Core company team. Only an
-              executive can edit or delete it.
-            </p>
+          {canManageMembers && !canEdit && (
+            <Note>
+              <Lock size={13} aria-hidden="true" /> You manage this team’s
+              members. Only the Leadership Lead can edit or delete teams.
+            </Note>
           )}
-          {canChange && (
-            <div className="cc-form-acts">
-              <button className="cc-btn" onClick={() => setEditing(true)}>
+          {canEdit && (
+            <FormActions>
+              <Button onClick={() => setEditing(true)}>
                 <Pencil size={14} />
                 Edit team
-              </button>
-            </div>
+              </Button>
+            </FormActions>
           )}
         </>
       )}
 
-      <section className="cc-sec">
-        <h3>
-          Members <span>{team.memberCount}</span>
-        </h3>
+      <Section title="Members" count={team.memberCount}>
         {team.members.map((member) => (
-          <div key={member.id} className="cc-row">
-            <Avatar name={member.name} />
-            <button
-              className="cc-grow cc-plain"
-              onClick={() => onOpenPerson(member.id)}
-            >
-              <b>{member.name}</b>
-              <small>
-                {member.id === team.leadId ? "Team lead · " : ""}
-                {member.role} · {workModeLabel[member.workMode]}
-              </small>
-            </button>
-            {canManage && member.id !== team.leadId && (
-              <button
-                className="cc-ib"
-                aria-label={`Remove ${member.name} from ${team.name}`}
-                data-tip="Remove from team"
-                onClick={() =>
-                  act(() => teamsApi.removeMember(team.id, member.id))
-                }
-              >
-                <X size={15} />
-              </button>
-            )}
-          </div>
+          <RecordRow
+            key={member.id}
+            avatar={<Avatar name={member.name} />}
+            title={member.name}
+            detail={
+              <>
+                {member.roleLabel} · {member.jobTitle}
+                {member.workMode && ` · ${workModeLabel[member.workMode]}`}
+              </>
+            }
+            onOpen={() => onOpenPerson(member.id)}
+            // Leads stay in their team, and nobody loses their last team.
+            remove={
+              canManageMembers &&
+              member.id !== team.leadId &&
+              teamCountOf(member.id) > 1
+                ? {
+                    label: `Remove ${member.name} from ${team.name}`,
+                    onRemove: () => membership.remove(team.id, member.id),
+                  }
+                : undefined
+            }
+          />
         ))}
-        {canManage && outside.length > 0 && (
-          <form
-            className="cc-inline"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (adding)
-                act(() => teamsApi.addMember(team.id, adding)).then(() =>
-                  setAdding(""),
-                );
-            }}
-          >
-            <label className="sr-only" htmlFor="add-member">
-              Add a person to {team.name}
-            </label>
-            <select
-              id="add-member"
-              value={adding}
-              onChange={(event) => setAdding(event.target.value)}
-            >
-              <option value="">Add a person…</option>
-              {outside.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name} · {person.role}
-                </option>
-              ))}
-            </select>
-            <button className="cc-btn" type="submit" disabled={!adding}>
-              <Plus size={14} />
-              Add
-            </button>
-          </form>
+        {canManageMembers && outside.length > 0 && (
+          <AddPicker
+            id="add-member"
+            label={`Add a person to ${team.name}`}
+            placeholder="Add a person…"
+            options={outside.map((person) => ({
+              value: person.id,
+              label: `${person.name} · ${person.jobTitle}`,
+            }))}
+            onAdd={(personId) => membership.add(team.id, personId)}
+          />
         )}
-        {actionError && (
-          <p className="cc-ferr" role="alert">
-            {actionError}
-          </p>
-        )}
-      </section>
+        <InlineError message={membership.error} />
+      </Section>
 
-      {canChange && (
-        <section className="cc-sec">
+      {canEdit && (
+        <Section>
           <ConfirmDelete
             what="team"
             onConfirm={async () => {
-              await teamsApi.remove(team.id);
+              await deleteTeam.mutateAsync(team.id);
               onDeleted();
             }}
           />
-        </section>
+        </Section>
       )}
+    </>
+  );
+}
+
+/** Sets a temporary password that the person must replace at their next sign-in. */
+function ResetPassword({ person }: { person: Person }) {
+  const reset = useResetPassword(person.id);
+  const [open, setOpen] = useState(false);
+  if (reset.isSuccess)
+    return (
+      <Note>
+        Temporary password set. Share it with {person.name.split(" ")[0]}{" "}
+        privately; they’ll choose a new one at sign-in.
+      </Note>
+    );
+  if (!open)
+    return (
+      <Button onClick={() => setOpen(true)}>
+        <KeyRound size={14} />
+        Reset password
+      </Button>
+    );
+  return (
+    <form
+      className="grid gap-2 w-full"
+      onSubmit={(event) => {
+        event.preventDefault();
+        reset.mutate(
+          String(new FormData(event.currentTarget).get("temporaryPassword")),
+        );
+      }}
+    >
+      <Field label="Temporary password">
+        <input
+          className={inputClasses}
+          name="temporaryPassword"
+          type="text"
+          autoComplete="off"
+          required
+          minLength={10}
+          maxLength={200}
+        />
+      </Field>
+      <InlineError
+        message={reset.error ? errorMessage(reset.error) : undefined}
+      />
+      <FormActions>
+        <Button variant="primary" type="submit" disabled={reset.isPending}>
+          {reset.isPending ? "Saving…" : "Set temporary password"}
+        </Button>
+        <Button type="button" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </FormActions>
+    </form>
+  );
+}
+
+/** Suspends (signs out everywhere, blocks sign-in) or reactivates a user. Leadership Lead only. */
+function SuspendToggle({ person }: { person: Person }) {
+  const update = useUpdatePerson(person.id);
+  const suspended = person.status === "SUSPENDED";
+  return (
+    <>
+      <Button
+        variant={suspended ? "default" : "danger"}
+        disabled={update.isPending}
+        onClick={() =>
+          update.mutate({ status: suspended ? "ACTIVE" : "SUSPENDED" })
+        }
+      >
+        {suspended ? <UserCheck size={14} /> : <UserX size={14} />}
+        {suspended ? "Reactivate" : "Suspend"}
+      </Button>
+      <InlineError
+        message={update.error ? errorMessage(update.error) : undefined}
+      />
     </>
   );
 }
 
 export function PersonPanel({
   personId,
-  initial,
   teams,
-  myPersonId,
-  canManage,
+  access,
   onOpenTeam,
   onDeleted,
 }: {
   personId: string;
-  initial?: Person;
   teams: Team[];
-  myPersonId: string;
-  canManage: boolean;
+  access: Access;
   onOpenTeam: (id: string) => void;
   onDeleted: () => void;
 }) {
-  const {
-    record: person,
-    setRecord,
-    error,
-    reload,
-  } = useRecord<Person>(
-    (signal) => peopleApi.get(personId, signal),
-    personId,
-    initial,
-  );
+  const { data: person, error, refetch } = usePerson(personId);
+  const deletePerson = useDeletePerson();
+  const membership = useMembership();
   const [editing, setEditing] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const [adding, setAdding] = useState("");
 
-  if (error) return <ErrorState message={error} onRetry={reload} />;
+  if (!person && error)
+    return <ErrorState message={loadError(error)} onRetry={refetch} />;
   if (!person) return <Skeleton rows={6} />;
 
-  const otherTeams = teams.filter(
-    (team) => !person.teams.some((t) => t.id === team.id),
+  const isMe = person.id === access.me.id;
+  // The Leadership Lead manages everyone; a manager manages the members of their team.
+  const canManage =
+    access.administer ||
+    (!isMe &&
+      person.teams.some(
+        (t) => !isManagerRole(t.role) && access.managesTeam(t.id),
+      ));
+  const addable = teams.filter(
+    (team) =>
+      access.managesTeam(team.id) &&
+      !person.teams.some((t) => t.id === team.id),
   );
-  const membership = async (run: () => Promise<Team>) => {
-    setActionError("");
-    try {
-      await run();
-      setRecord(await peopleApi.get(person.id));
-    } catch (caught) {
-      setActionError(messageFor(caught));
-    }
-  };
 
   return (
     <>
-      <div className="cc-dr-h">
-        <Avatar name={person.name} size="lg" />
-        <div>
-          <h2>
+      <DrawerHeader
+        avatar={<Avatar name={person.name} size="lg" />}
+        title={
+          <>
             {person.name}
-            {person.id === myPersonId && <Tag>Me</Tag>}
-          </h2>
-          <p>{person.role}</p>
-        </div>
-      </div>
-      {editing ? (
+            {isMe && <Tag>Me</Tag>}
+            {person.status === "SUSPENDED" && <Tag>Suspended</Tag>}
+          </>
+        }
+        summary={person.jobTitle}
+      />
+      {editing && canManage ? (
         <PersonForm
           person={person}
           teams={teams}
-          onSaved={(saved) => {
-            setRecord(saved);
-            setEditing(false);
-          }}
+          onSaved={() => setEditing(false)}
           onCancel={() => setEditing(false)}
         />
+      ) : person.restricted ? (
+        <Note>
+          <Lock size={13} aria-hidden="true" /> Contact details and location are
+          visible to {person.name.split(" ")[0]}’s teammates and to leadership.
+        </Note>
       ) : (
         <>
-          <dl className="cc-kv">
+          <dl className={detailListClasses}>
             <dt>Email</dt>
             <dd>{person.email}</dd>
             <dt>Location</dt>
@@ -372,105 +381,77 @@ export function PersonPanel({
             <dd>{person.timezone}</dd>
             <dt>Works</dt>
             <dd>
-              {workModeLabel[person.workMode]}
+              {person.workMode && workModeLabel[person.workMode]}
               {person.kind === "EXTERNAL" && " · external contact"}
             </dd>
           </dl>
           {canManage && (
-            <div className="cc-form-acts">
-              <button className="cc-btn" onClick={() => setEditing(true)}>
+            <FormActions>
+              <Button onClick={() => setEditing(true)}>
                 <Pencil size={14} />
                 Edit profile
-              </button>
-            </div>
+              </Button>
+              {!isMe && <ResetPassword person={person} />}
+            </FormActions>
           )}
         </>
       )}
 
-      <section className="cc-sec">
-        <h3>
-          Teams <span>{person.teams.length}</span>
-        </h3>
+      <Section title="Teams" count={person.teams.length}>
         {person.teams.map((team) => {
           const leads = person.leadsTeamIds.includes(team.id);
           return (
-            <div key={team.id} className="cc-row">
-              <TeamAvatar icon={team.icon} />
-              <button
-                className="cc-grow cc-plain"
-                onClick={() => onOpenTeam(team.id)}
-              >
-                <b>{team.name}</b>
-                <small>{leads ? "Team lead" : "Member"}</small>
-              </button>
-              {canManage && !leads && person.teams.length > 1 && (
-                <button
-                  className="cc-ib"
-                  aria-label={`Remove ${person.name} from ${team.name}`}
-                  data-tip="Remove from team"
-                  onClick={() =>
-                    membership(() => teamsApi.removeMember(team.id, person.id))
-                  }
-                >
-                  <X size={15} />
-                </button>
-              )}
-            </div>
+            <RecordRow
+              key={team.id}
+              avatar={<TeamAvatar icon={team.icon} />}
+              title={team.name}
+              detail={team.roleLabel}
+              onOpen={() => onOpenTeam(team.id)}
+              remove={
+                access.managesTeam(team.id) && !leads && person.teams.length > 1
+                  ? {
+                      label: `Remove ${person.name} from ${team.name}`,
+                      onRemove: () => membership.remove(team.id, person.id),
+                    }
+                  : undefined
+              }
+            />
           );
         })}
-        {canManage && otherTeams.length > 0 && (
-          <form
-            className="cc-inline"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (adding)
-                membership(() => teamsApi.addMember(adding, person.id)).then(
-                  () => setAdding(""),
-                );
-            }}
-          >
-            <label className="sr-only" htmlFor="add-team">
-              Add {person.name} to a team
-            </label>
-            <select
-              id="add-team"
-              value={adding}
-              onChange={(event) => setAdding(event.target.value)}
-            >
-              <option value="">Add to a team…</option>
-              {otherTeams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
-            </select>
-            <button className="cc-btn" type="submit" disabled={!adding}>
-              <Plus size={14} />
-              Add
-            </button>
-          </form>
-        )}
-        {actionError && (
-          <p className="cc-ferr" role="alert">
-            {actionError}
-          </p>
-        )}
-        <p className="cc-note">
-          Everyone keeps at least one team, and team leads stay in the team they
-          lead.
-        </p>
-      </section>
-
-      {canManage && person.id !== myPersonId && (
-        <section className="cc-sec">
-          <ConfirmDelete
-            what="person"
-            onConfirm={async () => {
-              await peopleApi.remove(person.id);
-              onDeleted();
-            }}
+        {addable.length > 0 && (
+          <AddPicker
+            id="add-team"
+            label={`Add ${person.name} to a team`}
+            placeholder="Add to a team…"
+            options={addable.map((team) => ({
+              value: team.id,
+              label: team.name,
+            }))}
+            onAdd={(teamId) => membership.add(teamId, person.id)}
           />
-        </section>
+        )}
+        <InlineError message={membership.error} />
+        <Note>
+          Each team gives its lead the manager role and everyone else the member
+          role. Everyone keeps at least one team.
+        </Note>
+      </Section>
+
+      {access.administer && !isMe && (
+        <Section title="Account">
+          <FormActions>
+            <SuspendToggle person={person} />
+          </FormActions>
+          <div className="mt-3">
+            <ConfirmDelete
+              what="user"
+              onConfirm={async () => {
+                await deletePerson.mutateAsync(person.id);
+                onDeleted();
+              }}
+            />
+          </div>
+        </Section>
       )}
     </>
   );

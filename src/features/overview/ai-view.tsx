@@ -1,9 +1,21 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ApiError } from "@/lib/api";
-import { Avatar, Skeleton, TeamAvatar, Tag } from "@/components/ui";
-import { peopleApi, teamsApi } from "@/features/teams/api";
+import type { ReactNode } from "react";
+import type { UseQueryResult } from "@tanstack/react-query";
+import { errorMessage } from "@/lib/api";
+import {
+  Avatar,
+  DataTable,
+  listRowClasses,
+  nameClasses,
+  Note,
+  Skeleton,
+  tableClasses,
+  TeamAvatar,
+  Tag,
+  TagList,
+} from "@/components/ui";
+import { usePeople, useTeam, useTeams } from "@/features/teams/queries";
 import {
   workModeLabel,
   type AiView,
@@ -11,119 +23,108 @@ import {
   type Team,
 } from "@/features/teams/types";
 
-type Loaded =
-  | { kind: "teams_overview"; teams: Team[] }
-  | { kind: "team"; team: Team }
-  | { kind: "people"; people: Person[] };
-
-/** Renders a view Claude asked for, loading current records by ID so the view is never stale or invented. */
+/**
+ * Renders a view Claude asked for, loading current records by ID so the view is never stale or
+ * invented. Views share the query cache with the rest of the app.
+ */
 export function AiViewCard({ view }: { view: AiView }) {
-  const [state, setState] = useState<Loaded | { error: string } | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const load = async (): Promise<Loaded> => {
-      if (view.kind === "team" && view.teamId)
-        return {
-          kind: "team",
-          team: await teamsApi.get(view.teamId, controller.signal),
-        };
-      if (view.kind === "people")
-        return {
-          kind: "people",
-          people: await peopleApi.list(
-            { ids: view.personIds },
-            controller.signal,
-          ),
-        };
-      return {
-        kind: "teams_overview",
-        teams: await teamsApi.list(controller.signal),
-      };
-    };
-    load()
-      .then(setState)
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === "AbortError")
-          return;
-        setState({
-          error:
-            error instanceof ApiError
-              ? error.message
-              : "This view couldn't load.",
-        });
-      });
-    return () => controller.abort();
-  }, [view]);
-
   return (
-    <section className={`cc-w ${view.kind === "team" ? "" : "wide"}`}>
-      <h4>{view.title}</h4>
-      {!state ? (
-        <Skeleton rows={3} />
-      ) : "error" in state ? (
-        <p className="cc-note">{state.error}</p>
-      ) : state.kind === "team" ? (
-        <TeamView team={state.team} />
-      ) : state.kind === "people" ? (
-        <PeopleView people={state.people} />
+    <section
+      className={`min-w-0 p-3.5 rounded-xl bg-panel border border-line ${view.kind === "team" ? "" : "col-span-full max-tablet:col-auto"}`}
+    >
+      <h4 className="mb-2 text-[12px] font-semibold tracking-[0.04em] uppercase text-subtle">
+        {view.title}
+      </h4>
+      {view.kind === "team" && view.teamId ? (
+        <TeamLoader id={view.teamId} />
+      ) : view.kind === "people" ? (
+        <PeopleLoader ids={view.personIds ?? []} />
       ) : (
-        <TeamsView teams={state.teams} />
+        <TeamsLoader />
       )}
     </section>
   );
 }
 
+/** Loading, error or the loaded view. */
+function Loaded<T>({
+  query,
+  children,
+}: {
+  query: UseQueryResult<T>;
+  children: (data: T) => ReactNode;
+}) {
+  if (query.data !== undefined) return children(query.data);
+  if (query.error)
+    return <Note>{errorMessage(query.error, "This view couldn't load.")}</Note>;
+  return <Skeleton rows={3} />;
+}
+
+function TeamLoader({ id }: { id: string }) {
+  const query = useTeam(id);
+  return <Loaded query={query}>{(team) => <TeamView team={team} />}</Loaded>;
+}
+
+function PeopleLoader({ ids }: { ids: string[] }) {
+  const query = usePeople({ ids });
+  return (
+    <Loaded query={query}>{(people) => <PeopleView people={people} />}</Loaded>
+  );
+}
+
+function TeamsLoader() {
+  const query = useTeams();
+  return (
+    <Loaded query={query}>{(teams) => <TeamsView teams={teams} />}</Loaded>
+  );
+}
+
 function TeamsView({ teams }: { teams: Team[] }) {
   return (
-    <div className="cc-tw">
-      <table className="cc-t">
-        <thead>
-          <tr>
-            <th>Team</th>
-            <th>Lead</th>
-            <th className="num">Members</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teams.map((team) => (
-            <tr key={team.id}>
-              <td>
-                <Link className="cc-who" href={`/teams?team=${team.id}`}>
-                  <TeamAvatar icon={team.icon} />
-                  <b>{team.name}</b>
-                </Link>
-              </td>
-              <td>{team.lead?.name ?? "—"}</td>
-              <td className="num">{team.memberCount}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={[
+        { label: "Team" },
+        { label: "Lead" },
+        { label: "Members", className: tableClasses.numeric },
+      ]}
+    >
+      {teams.map((team) => (
+        <tr key={team.id} className={tableClasses.row}>
+          <td className={tableClasses.cell}>
+            <Link className={nameClasses.link} href={`/teams?team=${team.id}`}>
+              <TeamAvatar icon={team.icon} />
+              <b className={nameClasses.name}>{team.name}</b>
+            </Link>
+          </td>
+          <td className={tableClasses.cell}>{team.lead?.name ?? "—"}</td>
+          <td className={`${tableClasses.cell} ${tableClasses.numeric}`}>
+            {team.memberCount}
+          </td>
+        </tr>
+      ))}
+    </DataTable>
   );
 }
 
 function TeamView({ team }: { team: Team }) {
   return (
     <>
-      <Link className="cc-who" href={`/teams?team=${team.id}`}>
+      <Link className={nameClasses.link} href={`/teams?team=${team.id}`}>
         <TeamAvatar icon={team.icon} />
-        <b>{team.name}</b>
+        <b className={nameClasses.name}>{team.name}</b>
       </Link>
-      <p className="cc-note">{team.purpose}</p>
+      <Note>{team.purpose}</Note>
       {team.members.map((member) => (
         <Link
           key={member.id}
-          className="cc-row"
+          className={`${listRowClasses.row} group`}
           href={`/teams?view=people&person=${member.id}`}
         >
           <Avatar name={member.name} />
-          <span className="cc-grow">
-            <b>{member.name}</b>
-            <small>
-              {member.id === team.leadId ? "Team lead · " : ""}
-              {member.role}
+          <span className={listRowClasses.text}>
+            <b className={listRowClasses.title}>{member.name}</b>
+            <small className={listRowClasses.detail}>
+              {member.roleLabel} · {member.jobTitle}
             </small>
           </span>
         </Link>
@@ -134,43 +135,44 @@ function TeamView({ team }: { team: Team }) {
 
 function PeopleView({ people }: { people: Person[] }) {
   return (
-    <div className="cc-tw">
-      <table className="cc-t">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Role</th>
-            <th className="hide-s">Teams</th>
-            <th className="hide-s">Location</th>
-          </tr>
-        </thead>
-        <tbody>
-          {people.map((person) => (
-            <tr key={person.id}>
-              <td>
-                <Link
-                  className="cc-who"
-                  href={`/teams?view=people&person=${person.id}`}
-                >
-                  <Avatar name={person.name} />
-                  <b>{person.name}</b>
-                </Link>
-              </td>
-              <td>{person.role}</td>
-              <td className="hide-s">
-                <span className="cc-tags">
-                  {person.teams.map((team) => (
-                    <Tag key={team.id}>{team.name}</Tag>
-                  ))}
-                </span>
-              </td>
-              <td className="hide-s cc-dim">
-                {person.location} · {workModeLabel[person.workMode]}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={[
+        { label: "Name" },
+        { label: "Role" },
+        { label: "Teams", className: tableClasses.hideOnPhone },
+        { label: "Location", className: tableClasses.hideOnPhone },
+      ]}
+    >
+      {people.map((person) => (
+        <tr key={person.id} className={tableClasses.row}>
+          <td className={tableClasses.cell}>
+            <Link
+              className={nameClasses.link}
+              href={`/teams?view=people&person=${person.id}`}
+            >
+              <Avatar name={person.name} />
+              <b className={nameClasses.name}>{person.name}</b>
+            </Link>
+          </td>
+          <td className={tableClasses.cell}>{person.jobTitle}</td>
+          <td className={`${tableClasses.cell} ${tableClasses.hideOnPhone}`}>
+            <TagList>
+              {person.teams.map((team) => (
+                <Tag key={team.id} spaced={false}>
+                  {team.name}
+                </Tag>
+              ))}
+            </TagList>
+          </td>
+          <td
+            className={`${tableClasses.cell} ${tableClasses.hideOnPhone} text-dim`}
+          >
+            {person.restricted || !person.workMode
+              ? "Visible to their team"
+              : `${person.location} · ${workModeLabel[person.workMode]}`}
+          </td>
+        </tr>
+      ))}
+    </DataTable>
   );
 }

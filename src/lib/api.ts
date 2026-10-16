@@ -1,7 +1,5 @@
-import { currentPreviewRole } from "@/features/auth/preview-role";
-
-const baseUrl =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+// Same-origin path: next.config.ts proxies /api/v1 to the API, so the session cookie is first-party.
+const baseUrl = "/api/v1";
 
 export class ApiError extends Error {
   constructor(
@@ -23,8 +21,6 @@ export async function api<T>(
       ...options,
       headers: {
         ...(options.body ? { "Content-Type": "application/json" } : {}),
-        // Demo-only: the API checks team permissions against this role.
-        "X-Preview-Role": currentPreviewRole(),
         ...options.headers,
       },
       signal: options.signal
@@ -51,4 +47,17 @@ export async function api<T>(
       body.error?.code,
     );
   return body as T;
+}
+
+/** The API's own message for a failed request, or `fallback` for anything else (network, bugs). */
+export function errorMessage(
+  error: unknown,
+  fallback = "That didn't work. Please try again.",
+) {
+  return error instanceof ApiError ? error.message : fallback;
+}
+
+/** True when a request was cancelled on purpose, so callers can ignore it. */
+export function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
 }
