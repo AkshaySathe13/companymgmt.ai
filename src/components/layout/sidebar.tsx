@@ -1,134 +1,87 @@
 "use client";
 import Link from "next/link";
-import {
-  X,
-  Building2,
-  ChevronDown,
-  CircleHelp,
-  ArrowUpRight,
-} from "lucide-react";
-import { Brand } from "@/components/brand";
-import { aiAgent, systems } from "@/config/navigation";
+import { Layers3, X } from "lucide-react";
+import { navGroups, findNav } from "@/config/navigation";
+import { IconButton } from "@/components/ui";
+
 export function Sidebar({
-  mobile = false,
-  collapsed,
-  systemsOpen,
   pathname,
-  closeMobile,
-  onToggleSystems,
-  onHelp,
+  canOpen,
+  mobile = false,
+  onClose,
 }: {
-  mobile?: boolean;
-  collapsed: boolean;
-  systemsOpen: boolean;
   pathname: string;
-  closeMobile: () => void;
-  onToggleSystems: () => void;
-  onHelp: () => void;
+  /** Whether the signed-in user's roles include a section. */
+  canOpen: (slug: string) => boolean;
+  mobile?: boolean;
+  onClose?: () => void;
 }) {
-  const mini = collapsed && !mobile;
+  const active = findNav(pathname);
+  // Only sections the user's roles allow; groups with none are left out.
+  const groups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((nav) => canOpen(nav.slug)),
+    }))
+    .filter((group) => group.items.length);
   return (
-    <div className="sidebar-content">
-      <div className="sidebar-brand">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between pt-4.5 pr-4 pb-3 pl-4.5">
         <Link
-          href="/ai-agent"
-          aria-label="Company management home"
-          onClick={closeMobile}
+          href="/overview"
+          className="flex items-center gap-2.5"
+          onClick={onClose}
         >
-          <Brand compact={mini} />
+          <span className="grid place-items-center size-8 rounded-[9px] bg-white text-black">
+            <Layers3 size={18} strokeWidth={1.9} />
+          </span>
+          <span>
+            <b className="block text-[14px] font-bold tracking-[-0.01em]">
+              CarrierOS
+            </b>
+            <small className="block text-[11.5px] text-dim">
+              Command Center
+            </small>
+          </span>
         </Link>
         {mobile && (
-          <button
-            className="icon-button"
-            aria-label="Close navigation"
-            onClick={closeMobile}
-          >
-            <X size={20} />
-          </button>
-        )}
-      </div>
-      <div className="workspace-chip">
-        <span className="workspace-avatar">
-          <Building2 size={18} />
-        </span>
-        {!mini && (
-          <div>
-            <strong>Company workspace</strong>
-            <span>Demo environment</span>
-          </div>
+          <IconButton label="Close navigation" onClick={onClose}>
+            <X size={18} />
+          </IconButton>
         )}
       </div>
       <nav
+        className="flex-1 overflow-y-auto pt-1 px-2.5 pb-3"
         aria-label={mobile ? "Mobile navigation" : "Main navigation"}
-        className="sidebar-nav"
       >
-        {!mini && <p className="nav-group-label">Workspace</p>}
-        <Link
-          href={aiAgent.href}
-          aria-label="AI Agent"
-          onClick={closeMobile}
-          className={`nav-item ${pathname === aiAgent.href ? "active" : ""}`}
-          aria-current={pathname === aiAgent.href ? "page" : undefined}
-          title={mini ? aiAgent.title : undefined}
-        >
-          <aiAgent.icon size={19} />
-          {!mini && <span>{aiAgent.title}</span>}
-          {!mini && <span className="nav-ai-badge">AI</span>}
-        </Link>
-        {!mini && (
-          <button
-            className="systems-toggle"
-            onClick={onToggleSystems}
-            aria-expanded={systemsOpen}
-          >
-            <span>
-              Systems <span className="nav-count">10</span>
-            </span>
-            <ChevronDown
-              size={14}
-              className={systemsOpen ? "" : "rotate-closed"}
-            />
-          </button>
-        )}
-        {(mini || systemsOpen) && (
-          <div className="system-links">
-            {systems.map((item) => (
-              <Link
-                key={item.slug}
-                href={item.href}
-                onClick={closeMobile}
-                className={`nav-item ${pathname === item.href ? "active" : ""}`}
-                aria-current={pathname === item.href ? "page" : undefined}
-                title={mini ? item.title : undefined}
-                aria-label={mini ? item.title : undefined}
-              >
-                <item.icon size={18} />
-                {!mini && <span>{item.title}</span>}
-              </Link>
-            ))}
+        {groups.map((group, index) => (
+          <div key={group.label}>
+            <p
+              className={`${index ? "mt-4" : "mt-1"} mx-2.5 mb-1.5 text-[11px] font-semibold tracking-[0.04em] uppercase text-faint`}
+            >
+              {group.label}
+            </p>
+            {group.items.map((nav) => {
+              const current = active?.href === nav.href;
+              return (
+                <Link
+                  key={nav.href}
+                  href={nav.href}
+                  className={`flex items-center gap-2.5 h-8.5 px-2.5 rounded-lg text-[13.5px] ${current ? "bg-[#1c1c1c] text-white [&>svg]:text-white" : "text-subtle [&>svg]:text-[#8a8a8a] hover:bg-hover hover:text-white"}`}
+                  aria-current={current ? "page" : undefined}
+                  onClick={onClose}
+                >
+                  <nav.icon size={16} strokeWidth={1.8} />
+                  <span>{nav.title}</span>
+                </Link>
+              );
+            })}
           </div>
-        )}
+        ))}
       </nav>
-      <div className="sidebar-bottom">
-        <button
-          className="sidebar-help"
-          onClick={onHelp}
-          title={mini ? "Workspace guide" : undefined}
-        >
-          <CircleHelp size={18} />
-          {!mini && (
-            <>
-              <span>Workspace guide</span>
-              <ArrowUpRight size={15} />
-            </>
-          )}
-        </button>
-        {!mini && (
-          <div className="sidebar-preview">
-            <span className="status-dot" />
-            Layout preview<span>v0.1</span>
-          </div>
-        )}
+      <div className="flex items-center gap-2 py-3 px-4 border-t border-line text-[11.5px] text-dim">
+        <span className="size-[7px] rounded-full bg-ok" />
+        Demo session · fictional data
       </div>
     </div>
   );
